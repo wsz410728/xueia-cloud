@@ -25,29 +25,29 @@
   --border: #e4e4e7;
   --input: #e4e4e7;
   --ring: #a1a1aa;
-  --radius: 0.625rem;
+  --radius: 0.5rem; /* 参考站卡片/按钮均为 6px（radius-2px） */
 }
 
 .dark {
-  --background: #0a0a0a;
+  --background: #1a1a1a; /* 参考站深底 oklch(0.145 0 0)，比纯黑亮一档 */
   --foreground: #fafafa;
-  --card: #111113;
+  --card: #1a1a1a; /* 参考站卡片与底同色，靠半透明边框区分 */
   --card-foreground: #fafafa;
-  --popover: #18181b;
+  --popover: #202024;
   --popover-foreground: #fafafa;
   --primary: #fafafa;
   --primary-foreground: #0a0a0a;
   --secondary: #27272a;
   --secondary-foreground: #fafafa;
-  --muted: #1c1c1f;
+  --muted: #232327;
   --muted-foreground: #a1a1aa;
   --accent: #27272a;
   --accent-foreground: #fafafa;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
   --success: #34d399;
-  --border: #27272a;
-  --input: #27272a;
+  --border: #ffffff26; /* 参考站深色边框 = 白 15% 透明 */
+  --input: #3f3f46;
   --ring: #52525b;
 }
 

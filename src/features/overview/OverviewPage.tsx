@@ -8,6 +8,24 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useMe } from "@/features/dashboard-shell/use-me"
 import { timeAgo } from "@/lib/utils"
 
+/** 欢迎标题逐字渐入（对齐参考站的字符级动画） */
+function WelcomeTitle({ text }: { text: string }) {
+  return (
+    <h1 className="text-2xl font-bold" aria-label={text}>
+      {Array.from(text).map((ch, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className="data-fade inline-block"
+          style={{ animationDelay: `${i * 45}ms` }}
+        >
+          {ch}
+        </span>
+      ))}
+    </h1>
+  )
+}
+
 /** 概览页（静态 mock 数据；拖拽布局属批次 ②） */
 export function OverviewPage() {
   const { t } = useT()
@@ -37,7 +55,7 @@ export function OverviewPage() {
         {isLoading ? (
           <Skeleton className="h-8 w-64" />
         ) : (
-          <h1 className="text-2xl font-bold">{t("dash.welcome", { name: user?.nickname ?? user?.username ?? "" })}</h1>
+          <WelcomeTitle text={t("dash.welcome", { name: user?.nickname ?? user?.username ?? "" })} />
         )}
         <p className="mt-1 text-sm text-muted-foreground">{t("dash.subtitle")}</p>
       </header>

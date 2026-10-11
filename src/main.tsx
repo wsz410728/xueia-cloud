@@ -1,6 +1,7 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import "@/index.css"
 import { I18nProvider } from "@/i18n"
 import { AppRoutes } from "@/routes"
 import { ErrorBoundary } from "@/features/placeholder/ErrorBoundary"
