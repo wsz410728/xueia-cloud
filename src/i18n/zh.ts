@@ -694,4 +694,6 @@ export const zh: Record<string, string> = {
   "don.redeem.hint": "只会补上你还没有的权限，已有的会跳过并提示。别人转送的「自选权限券」，需先选一个模块再兑换。",
   "don.redeem.ok": "兑换成功，已解锁：{unlocked}",
   "don.redeem.pickModule": "这是自选券，请先选择要开通的模块",
+
+  "common.success": "操作成功",
 }

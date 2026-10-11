@@ -674,4 +674,6 @@ export const en: Record<string, string> = {
   "don.redeem.hint": "Only missing permissions are granted; existing ones are skipped with a notice. Pick-a-permission vouchers need a module selection first.",
   "don.redeem.ok": "Redeemed — unlocked: {unlocked}",
   "don.redeem.pickModule": "This is a pick-a-permission voucher — choose a module first",
+
+  "common.success": "Done",
 }
