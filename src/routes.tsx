@@ -14,6 +14,7 @@ import { SettingsPage } from "@/features/settings/SettingsPage"
 import { ShareBoxPage } from "@/features/tempbox/ShareBoxPage"
 import { PickupPage } from "@/features/tempbox/PickupPage"
 import { AppealPage } from "@/features/appeal/AppealPage"
+import { AiPage } from "@/features/ai/AiPage"
 import { PlaceholderPage } from "@/features/placeholder/PlaceholderPage"
 import { NotFoundPage } from "@/features/placeholder/NotFoundPage"
 
@@ -48,7 +49,7 @@ export function AppRoutes() {
             {/* 已建骨架，待批次实现 */}
             <Route path="tempbox" element={<ShareBoxPage />} />
             <Route path="settings" element={<SettingsPage />} />
-            <Route path="ai" element={<SectionPlaceholder titleKey="nav.ai" subtitleKey="ai.subtitle" batch="③" />} />
+            <Route path="ai" element={<AiPage />} />
             <Route path="donations" element={<SectionPlaceholder titleKey="nav.donations" subtitleKey="don.subtitle" batch="③" />} />
             <Route path="community" element={<SectionPlaceholder titleKey="nav.community" subtitleKey="cm.subtitle" batch="④" />} />
             <Route path="chat" element={<SectionPlaceholder titleKey="nav.chat" subtitleKey="chat.subtitle" batch="④" />} />

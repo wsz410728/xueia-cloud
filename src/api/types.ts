@@ -10,6 +10,8 @@ export interface UserSummary {
   role: "member" | "admin" | "super"
   emailVerified: boolean
   twoFactorEnabled: boolean
+  /** AI 中转站权限（批次③：默认未解锁，贡献审核通过后解锁） */
+  aiUnlocked: boolean
 }
 
 /** POST /login —— 成功返回用户；需要 2FA 时抛 AUTH_2FA_REQUIRED（ApiError.data 携带票据） */

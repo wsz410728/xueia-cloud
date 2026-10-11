@@ -18,6 +18,8 @@ export const mockUser: UserSummary = {
   role: "super",
   emailVerified: false,
   twoFactorEnabled: true,
+  /** AI 中转站权限（批次③：默认未解锁，贡献审核通过后解锁） */
+  aiUnlocked: false,
 }
 
 const ok = <T,>(data: T, init?: ResponseInit) => HttpResponse.json({ ok: true, data }, init)
@@ -536,6 +538,23 @@ export const appealHandlers = [
   http.get(`${API}/appeal/pending-reply`, () => ok(null)),
 ]
 
+// ===== AI 中转站（批次③）=====
+
+export const aiHandlers = [
+  http.get(`${API}/ai/status`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const unlocked = session.user.aiUnlocked ?? false
+    return ok({
+      configured: true,
+      enabled: true,
+      unlocked,
+      modelCount: 42,
+      remainingQuota: unlocked ? "¥1000" : null,
+      baseUrl: unlocked ? "https://ai.xueia.com/v1" : null,
+    })
+  }),
+]
+
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
@@ -544,4 +563,5 @@ export const handlers = [
   ...settingsExtraHandlers,
   ...tempboxHandlers,
   ...appealHandlers,
+  ...aiHandlers,
 ]

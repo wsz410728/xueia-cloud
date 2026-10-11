@@ -568,4 +568,15 @@ export const en: Record<string, string> = {
   "appeal.backToLogin": "Back to sign in",
 
   "common.edit": "Edit",
+
+  "ai.title": "AI Gateway",
+  "ai.tagline": "One unified LLM API endpoint, ready to use.",
+  "ai.notOpen": "Feature not open",
+  "ai.lockedTitle": "This feature isn't open to you yet",
+  "ai.lockedDesc": "Your account hasn't been granted AI Gateway access. Resources are limited, so it isn't open to everyone.",
+  "ai.howToUnlock": "How to unlock",
+  "ai.howToUnlockDesc": "Contribute a resource (an AI channel, a tunnel config or a proxy subscription); once an admin approves it, this feature unlocks automatically.",
+  "ai.goDonate": "Go to donate",
+  "ai.featureId": "Feature id",
+  "ai.notConfiguredDesc": "The gateway credentials aren't configured yet — try again later.",
 }

@@ -236,7 +236,11 @@
 | `POST /appeal` | 提交申诉（**公开**，无需登录） | `{account(必填), contact(选填), content(≥10 字)}`；前端同规则前置校验 |
 | `GET /appeal/pending-reply` | 管理员回复（有则需已阅确认） | 返回 `null` 或 `{reply, repliedAt, status}` |
 
-### 3.6 其余域（批次 3-6，占位待登记）
+### 3.6 AI 中转站 ai（批次③，已实现 mock 🟡）
+
+| `GET /ai/status` | AI 中转站状态门（configured/enabled/unlocked/modelCount/remainingQuota/baseUrl） | 需登录 |
+
+### 3.7 其余域（批次 4-6，占位待登记）
 
 - **tempbox**：`/tempbox/config`、`/tempbox/create`（批次 2）
 - **公告/强制确认**（批次 3）：`/announcements`、`/notice/pending`、`/notice/ack`

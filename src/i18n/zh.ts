@@ -588,4 +588,15 @@ export const zh: Record<string, string> = {
   "appeal.backToLogin": "返回登录",
 
   "common.edit": "编辑",
+
+  "ai.title": "AI 中转站",
+  "ai.tagline": "统一的大模型 API 入口，开箱即用。",
+  "ai.notOpen": "功能未开放",
+  "ai.lockedTitle": "该功能暂未向你开放",
+  "ai.lockedDesc": "你的账号未被授予「AI 中转站」权限。站长资源有限，该服务暂未全量开放。",
+  "ai.howToUnlock": "如何解锁",
+  "ai.howToUnlockDesc": "如果你愿意贡献自己的资源（例如 AI 渠道、穿透配置、代理订阅），提交捐献申请经管理员审核通过后，该功能会自动为你解锁。",
+  "ai.goDonate": "前往捐献",
+  "ai.featureId": "功能标识",
+  "ai.notConfiguredDesc": "管理员还未配置中转站凭据，请稍后再试。",
 }
