@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SettingCard } from "./SettingsPage"
+import { Skeleton } from "@/components/ui/skeleton"
 
 /**
  * 个人资料卡（参考站结构）：头像（角色环）+ 上传（JPG/PNG/WebP/GIF ≤2MB，前端前置校验）
@@ -42,11 +43,12 @@ export function ProfileCard() {
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   })
 
-  if (!user) return null
-
   return (
     <SettingCard title={t("settings.profile")} desc={t("settings.profile.desc")}>
-      <div className="space-y-4">
+      {!user ? (
+        <Skeleton className="h-24 w-full" />
+      ) : (
+        <div className="space-y-4">
         {/* 头像行 */}
         <div className="flex items-center gap-3">
           <Avatar className={user.role === "super" ? "role-ring role-ring-super size-12" : user.role === "admin" ? "role-ring role-ring-admin size-12" : "size-12"}>
@@ -131,7 +133,8 @@ export function ProfileCard() {
         <p className="hidden text-xs text-muted-foreground">
           <Pencil className="size-3" />
         </p>
-      </div>
+        </div>
+      )}
     </SettingCard>
   )
 }
