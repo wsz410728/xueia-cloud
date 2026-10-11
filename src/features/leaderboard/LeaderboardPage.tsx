@@ -57,6 +57,22 @@ export function LeaderboardPage() {
     achievement: t("lb.unit.points"),
   }
 
+  /** 指标二级切换（参考站同款：积分榜=余额/累计，社区榜=发帖/点赞/回复） */
+  const metrics: Partial<Record<BoardKey, Array<{ key: string; label: string }>>> = {
+    points: [
+      { key: "balance", label: t("lb.metric.balance") },
+      { key: "earned", label: t("lb.metric.earned") },
+    ],
+    community: [
+      { key: "posts", label: t("lb.metric.posts") },
+      { key: "likes", label: t("lb.metric.likes") },
+      { key: "comments", label: t("lb.metric.comments") },
+    ],
+  }
+  const [metric, setMetric] = useState<string | null>(null)
+  const boardMetrics = metrics[board]
+  const activeMetric = boardMetrics ? (boardMetrics.some((m) => m.key === metric) ? metric : boardMetrics[0].key) : null
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <PageHeader
@@ -86,6 +102,16 @@ export function LeaderboardPage() {
           ))}
           <Badge variant="secondary" className="ml-auto">{t("ph.demo")}</Badge>
         </div>
+        {boardMetrics && activeMetric && (
+          <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+            <span className="text-xs text-muted-foreground">{t("lb.metric.label")}</span>
+            {boardMetrics.map((m) => (
+              <Button key={m.key} size="sm" variant={activeMetric === m.key ? "secondary" : "ghost"} onClick={() => setMetric(m.key)}>
+                {m.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       <Card>
@@ -152,6 +178,17 @@ export function AchievementsPage() {
         subtitle={t("ach.subtitle")}
         toolbar={<Badge variant="success">{t("ach.unlockedCount", { n: unlocked })}</Badge>}
       />
+
+      {/* 当前称号 + 升级进度（参考站同款信息行） */}
+      <div className="flex flex-wrap items-center gap-3 rounded-md border bg-card px-4 py-3 text-sm">
+        <span className="text-muted-foreground">{t("ach.joinedAt", { date: "2026/10/05" })}</span>
+        <span className="text-muted-foreground">·</span>
+        <span className="flex items-center gap-2">
+          {t("ach.currentTitle")}
+          <Badge>{t("ach.defaultTitle")}</Badge>
+        </span>
+        <span className="ml-auto text-xs text-muted-foreground">{t("ach.nextTitle", { n: 6, name: "常驻居民" })}</span>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PLACEHOLDER_ACH.map((a) => (
