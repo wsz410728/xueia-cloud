@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
+import { AiUnlocked } from "./AiUnlocked"
 
 /**
  * AI 中转站页 —— 对齐参考站实测结构：
@@ -93,12 +94,7 @@ export function AiPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            {/* Task 3 在此渲染解锁态界面（接入信息/Key/模型/订阅） */}
-            {t("common.loading")}
-          </CardContent>
-        </Card>
+        <AiUnlocked />
       )}
 
       <Dialog open={bindOpen} onOpenChange={setBindOpen}>

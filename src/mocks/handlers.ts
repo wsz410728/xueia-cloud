@@ -540,6 +540,9 @@ export const appealHandlers = [
 
 // ===== AI 中转站（批次③）=====
 
+interface MockAiKey { id: string; name: string; group: string; createdAt: string; plain: string }
+const mockAiKeys: MockAiKey[] = []
+
 export const aiHandlers = [
   http.get(`${API}/ai/status`, () => {
     if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
@@ -566,6 +569,58 @@ export const aiHandlers = [
     if (password !== "password123") return fail(400, "AI_PASSWORD_MISMATCH", "密码与本站登录密码不一致")
     session.user.aiUnlocked = true
     return ok({ unlocked: true })
+  }),
+
+  // ===== Key / 模型 / 订阅 =====
+  http.get(`${API}/dev/keys`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({ keys: mockAiKeys.map((k) => ({ ...k, skPrefix: k.plain.slice(0, 11) + "••••" })) })
+  }),
+
+  http.post(`${API}/dev/key`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { name } = (await request.json()) as { name: string }
+    if (!name?.trim()) return fail(400, "SYS_BAD_REQUEST", "请填写 Key 名称")
+    const plain = `sk-${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 10)}`
+    mockAiKeys.push({
+      id: `k-${Date.now()}`, name: name.trim(), group: "默认",
+      createdAt: new Date().toISOString(), plain,
+    })
+    // 明文只在创建响应出现一次；列表接口用 plain 生成脱敏前缀（真实后端只存哈希）
+    return ok({ key: plain })
+  }),
+
+  http.post(`${API}/dev/key/delete`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { id } = (await request.json()) as { id: string }
+    const i = mockAiKeys.findIndex((k) => k.id === id)
+    if (i >= 0) mockAiKeys.splice(i, 1)
+    return ok(null)
+  }),
+
+  http.get(`${API}/ai/models`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({
+      models: [
+        { name: "gpt-5", tag: "旗舰" },
+        { name: "claude-sonnet-4.5", tag: "旗舰" },
+        { name: "gemini-2.5-pro", tag: "均衡" },
+        { name: "deepseek-v3.2", tag: "高性价比" },
+        { name: "qwen3-coder", tag: "代码" },
+      ],
+      recommended: ["gpt-5", "claude-sonnet-4.5", "deepseek-v3.2"],
+    })
+  }),
+
+  http.get(`${API}/ai/subscriptions`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({
+      free: {
+        title: "免费订阅", remaining: "¥980", total: "¥1000",
+        nextResetAt: new Date(Date.now() + 12 * 3600 * 1000).toISOString(),
+      },
+      rewards: [],
+    })
   }),
 ]
 

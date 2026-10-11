@@ -242,6 +242,11 @@
 | `GET /ai/status` | AI 中转站状态门（configured/enabled/unlocked/modelCount/remainingQuota/baseUrl） | 需登录 |
 | `GET /ai/account` | 中转站账号是否已建 | 需登录 |
 | `POST /ai/bind` | 用本站登录密码绑定中转站账号并解锁 | `password`；不匹配 → `AI_PASSWORD_MISMATCH` |
+| `GET /dev/keys` | Key 列表（脱敏 skPrefix） | — |
+| `POST /dev/key` | 新建 Key（**明文仅此响应一次**） | `name` |
+| `POST /dev/key/delete` | 删除 Key | `id` |
+| `GET /ai/models` | 全部模型 + 推荐档位 | — |
+| `GET /ai/subscriptions` | 免费订阅 + 其他订阅 | — |
 
 ### 3.7 其余域（批次 4-6，占位待登记）
 
