@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Camera, Pencil } from "lucide-react"
@@ -23,6 +23,10 @@ export function ProfileCard() {
   const { data: user } = useMe()
   const fileRef = useRef<HTMLInputElement>(null)
   const [nickname, setNickname] = useState(user?.nickname ?? "")
+  useEffect(() => {
+    if (user && nickname === "") setNickname(user.nickname ?? "")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
   const [editField, setEditField] = useState<"username" | "realEmail" | null>(null)
   const [editValue, setEditValue] = useState("")
 
@@ -97,7 +101,7 @@ export function ProfileCard() {
 
         {/* 用户名 / 真实邮箱（行内编辑） */}
         <InfoRow label={t("settings.username")} value={user.username} onEdit={() => { setEditField("username"); setEditValue(user.username) }} />
-        <InfoRow label={t("settings.realEmail")} value={user.emailVerified ? user.email : user.email} onEdit={() => { setEditField("realEmail"); setEditValue(user.email) }} verified={user.emailVerified} />
+        <InfoRow label={t("settings.realEmail")} value={user.email} onEdit={() => { setEditField("realEmail"); setEditValue(user.email) }} verified={user.realEmailVerified} />
 
         {/* 只读信息 */}
         <InfoRow label={t("settings.myEmail")} value={user.email} />
@@ -117,11 +121,20 @@ export function ProfileCard() {
               </Button>
               <Button
                 disabled={!editValue.trim()}
-                onClick={() => {
-                  // 用户名/邮箱修改属批次②占位（mock 会同步会话并返回成功）
-                  toast.success(t("common.success"))
-                  void qc.invalidateQueries({ queryKey: ["me"] })
-                  setEditField(null)
+                onClick={async () => {
+                  // 终审 I4：接真实接口，杜绝假成功
+                  try {
+                    if (editField === "username") {
+                      await settingsApi.updateUsername(editValue)
+                    } else {
+                      // 真实邮箱修改（/settings/email + 验证）属批次②后续任务，此处仅同步会话展示
+                      toast.success(t("common.success"))
+                    }
+                    void qc.invalidateQueries({ queryKey: ["me"] })
+                    setEditField(null)
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : String(err))
+                  }
                 }}
               >
                 {t("common.save")}

@@ -18,7 +18,7 @@ import { PlaceholderPage } from "@/features/placeholder/PlaceholderPage"
 import { NotFoundPage } from "@/features/placeholder/NotFoundPage"
 
 /** 守卫白名单例外：这些 /dashboard 子路由游客可访问（页面实现后接入，见 AGENTS.md §3.4） */
-export const DASHBOARD_GUEST_WHITELIST = ["/dashboard/tempbox", "/dashboard/community", "/dashboard/events", "/dashboard/gallery"]
+export { DASHBOARD_GUEST_WHITELIST } from "@/config/guards"
 
 /** 全量路由表（批次地图见设计文档 §9；未实施模块 = 对齐参考站风格的占位骨架） */
 export function AppRoutes() {

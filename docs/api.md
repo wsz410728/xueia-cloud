@@ -195,7 +195,10 @@
 | `POST /mailbox/messages/batch-delete` | 批量删除 | `mailboxId: string; ids: string[]` |
 | `POST /mailbox/read-all` | 全部已读 | `mailboxId: string` |
 
-待实现（批次②后续任务登记）：`/mailbox/forward-verify`、`/mailbox/temp`(+`/{id}/refresh`)。
+| `GET /mailbox/temp` | 当前临时邮箱（无则 null） | — |
+| `POST /mailbox/temp` | 生成临时邮箱（每次换新，旧的作废） | 30 分钟有效 |
+| `POST /mailbox/temp/{id}/refresh` | 换一个（旧地址立即作废） | id 不符 → `SYS_NOT_FOUND` |
+| `POST /mailbox/forward-verify` | 转发验证（两步同路径） | 第一步 `{mailboxId, email}` → `{sentTo}` 掩码；第二步 `{mailboxId, code}` → 通过后 `forwardVerified=true`；错码 `MAILBOX_CODE_INVALID` |
 
 ### 3.3 账户与安全域 settings（批次②，已实现 mock 🟡）
 

@@ -586,4 +586,6 @@ export const zh: Record<string, string> = {
   "appeal.submitted": "已提交",
   "appeal.submittedDesc": "申诉提交于 {time}，管理员处理后会通过你留下的联系方式回复。",
   "appeal.backToLogin": "返回登录",
+
+  "common.edit": "编辑",
 }

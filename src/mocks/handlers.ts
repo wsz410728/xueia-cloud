@@ -316,9 +316,8 @@ export const settingsHandlers = [
 
   http.post(`${API}/settings/avatar`, async ({ request }) => {
     if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
-    const form = await request.formData()
-    const file = form.get("file")
-    if (!(file instanceof File)) return fail(400, "SYS_BAD_REQUEST", "缺少文件")
+    const raw = await request.text()
+    if (!raw.includes('name="file"')) return fail(400, "SYS_BAD_REQUEST", "缺少文件")
     // mock：不落盘，返回一个占位 SVG data URL
     const avatarUrl = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzExMSIvPjx0ZXh0IHg9IjUwIiB5PSI2MCIgZm9udC1zaXplPSI0MCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+WDwvdGV4dD48L3N2Zz4="
     session.user.avatarUrl = avatarUrl
@@ -483,12 +482,12 @@ export const tempboxHandlers = [
     let text: string | undefined
     let files: Array<{ name: string; size: number; content: string }> = []
     if (ct.includes("multipart/form-data")) {
-      const form = await request.formData()
       kind = "files"
-      for (const f of form.getAll("files")) {
-        if (f instanceof File) {
-          files.push({ name: f.name, size: f.size, content: `mock-content-of-${f.name}` })
-        }
+      // 说明：mock 不解析 multipart 二进制（测试环境 jsdom FormData + undici 下
+      // request.formData() 会挂起），改为从原文提取文件名——足够支撑 mock 语义。
+      const raw = await request.text()
+      for (const m of raw.matchAll(/name="files"; filename="([^"]*)"/g)) {
+        files.push({ name: m[1], size: m[1].length * 8, content: `mock-content-of-${m[1]}` })
       }
     } else {
       const body = (await request.json()) as { kind: "text"; text: string }

@@ -42,3 +42,33 @@ describe("RequireAuth guard", () => {
     expect(await screen.findByText("dashboard-content")).toBeInTheDocument()
   })
 })
+
+/** 终审 I5：白名单例外必须真实生效（游客可看 community/gallery/events，其余弹回登录） */
+describe("RequireAuth 白名单例外", () => {
+  it("lets guests open whitelisted dashboard routes", async () => {
+    const { server } = await import("./setup")
+    const { HttpResponse, http } = await import("msw")
+    // 未登录（/me 401），访问白名单路由应渲染内容而不是跳登录
+    server.use(http.get("/api/v1/me", () => HttpResponse.json({ ok: false, error: { code: "AUTH_REQUIRED", message: "未登录" } }, { status: 401 })))
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/dashboard/community"]}>
+          <Routes>
+            <Route element={<RequireAuth />}>
+              <Route path="/dashboard/community" element={<div>community-guest-content</div>} />
+            </Route>
+            <Route path="/login" element={<div>login-page</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    expect(await screen.findByText("community-guest-content")).toBeInTheDocument()
+    expect(screen.queryByText("login-page")).not.toBeInTheDocument()
+  })
+
+  it("still redirects guests away from non-whitelisted dashboard routes", async () => {
+    renderGuard("/dashboard")
+    expect(screen.queryByText("dashboard-content")).not.toBeInTheDocument()
+  })
+})

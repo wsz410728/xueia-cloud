@@ -92,4 +92,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const get = <T,>(path: string) => request<T>(path)
 export const post = <T,>(path: string, body?: unknown) =>
-  request<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) })
+  request<T>(path, {
+    method: "POST",
+    // FormData 必须原样透传（由浏览器带 multipart boundary）；JSON 才 stringify。
+    // 终审 C1：此前 post 无条件 stringify，把 FormData 变成 "{}" 字符串，上传成功路径全坏。
+    body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
+  })

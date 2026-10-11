@@ -566,4 +566,6 @@ export const en: Record<string, string> = {
   "appeal.submitted": "Submitted",
   "appeal.submittedDesc": "Submitted at {time}; admins will reply via your contact info.",
   "appeal.backToLogin": "Back to sign in",
+
+  "common.edit": "Edit",
 }

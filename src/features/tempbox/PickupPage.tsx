@@ -6,11 +6,11 @@ import { Link, useSearchParams } from "react-router"
 import { useT } from "@/i18n"
 import { brand } from "@/config/brand"
 import { tempboxApi } from "@/api/tempbox"
+import { ApiError } from "@/lib/api-client"
 import type { TempboxPickup } from "@/api/tempbox"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
 /**
@@ -33,13 +33,12 @@ export function PickupPage() {
       setResult(data)
     },
     onError: (e) => {
-      const message = e instanceof Error ? e.message : String(e)
-      // 过期/不存在 → 友好过期态（Review Focus #1），其余错误 toast
-      if (/过期|不存在|TB_CODE_EXPIRED/.test(message)) {
+      // 过期/不存在 → 友好过期态（按错误码判断，不依赖消息文案）
+      if (e instanceof ApiError && (e.code === "TB_CODE_EXPIRED" || e.status === 404)) {
         setExpired(true)
         setResult(null)
       } else {
-        toast.error(message)
+        toast.error(e instanceof Error ? e.message : String(e))
       }
     },
   })
@@ -113,7 +112,7 @@ export function PickupPage() {
                 <div className="flex items-center justify-between">
                   <Badge variant="secondary">{t("tb.textBadge")}</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {t("tb.pickup.expires", { time: new Date(result.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
+                    {t("tb.pickup.expires", { n: Math.max(1, Math.round((new Date(result.expiresAt).getTime() - Date.now()) / 60000)) })}
                   </span>
                 </div>
                 <p className="max-h-72 overflow-y-auto rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">
@@ -132,7 +131,7 @@ export function PickupPage() {
                 <div className="flex items-center justify-between">
                   <Badge variant="secondary">{t("tb.pickup.filesBadge")}</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {t("tb.pickup.expires", { time: new Date(result.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
+                    {t("tb.pickup.expires", { n: Math.max(1, Math.round((new Date(result.expiresAt).getTime() - Date.now()) / 60000)) })}
                   </span>
                 </div>
                 <ul className="space-y-1.5">
@@ -159,9 +158,6 @@ export function PickupPage() {
           </CardContent>
         </Card>
 
-        {result === null && !expired && (
-          <Skeleton className="hidden" />
-        )}
       </main>
 
       <footer className="border-t">

@@ -50,3 +50,29 @@ test("login then reach settings and the email page (SPA navigation)", async ({ p
   await page.getByRole("link", { name: "临时分享箱" }).click()
   await expect(page.getByText("默认保存")).toBeVisible()
 })
+
+/** 终审 C1：真实浏览器的 multipart 成功路径（jsdom 单测无法覆盖传输层） */
+test("file share works end-to-end in a real browser", async ({ page }) => {
+  await page.goto("/login")
+  await page.getByLabel(/用户名或邮箱/).fill("yanxi")
+  await page.getByLabel(/密码/).fill("password123")
+  await page.getByRole("button", { name: "登录", exact: true }).click()
+  await page.getByText("二次验证").waitFor({ state: "visible" })
+  await page.getByRole("textbox", { name: "6 位动态码" }).fill("123456")
+  await page.getByRole("button", { name: "验证", exact: true }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+
+  await page.getByRole("link", { name: "临时分享箱" }).click()
+  await page.getByRole("tab", { name: "文件 / 图片" }).click()
+  // Playwright 原生 setInputFiles → 真实 multipart FormData
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "e2e-upload.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("e2e file body"),
+  })
+  await page.getByRole("button", { name: "生成接收码" }).click()
+  // 成功卡出现：6 位大写码 + 不再是空的文字箱
+  await expect(page.getByText(/你的接收码|Your pickup code/)).toBeVisible()
+  const code = await page.getByText(/^[A-Z0-9]{6}$/).first().innerText()
+  expect(code).toMatch(/^[A-Z0-9]{6}$/)
+})

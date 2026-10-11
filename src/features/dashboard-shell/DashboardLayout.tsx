@@ -36,6 +36,7 @@ import {
 import { cn } from "@/lib/utils"
 import { getStoredTheme, setTheme, type ThemeSetting } from "@/lib/theme"
 import { authApi } from "@/api/auth"
+import { DASHBOARD_GUEST_WHITELIST } from "@/config/guards"
 import { useClearMe, useMe } from "./use-me"
 
 /** 守卫：/dashboard/* 整组 requiresAuth；未登录跳 /login?from=…（白名单例外由路由表控制，见 routes.tsx） */
@@ -51,6 +52,11 @@ export function RequireAuth() {
     )
   }
   if (!user) {
+    // 白名单例外：公开可看的子路由放行（页面自身处理「交互需登录」）
+    const isGuestOk = DASHBOARD_GUEST_WHITELIST.some(
+      (p) => location.pathname === p || location.pathname.startsWith(p + "/")
+    )
+    if (isGuestOk) return <Outlet />
     const from = encodeURIComponent(location.pathname + location.search)
     return <Navigate to={`/login?from=${from}`} replace />
   }
