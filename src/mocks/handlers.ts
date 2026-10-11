@@ -524,6 +524,19 @@ export const tempboxHandlers = [
   }),
 ]
 
+// ===== 申诉（公开） =====
+
+export const appealHandlers = [
+  http.post(`${API}/appeal`, async ({ request }) => {
+    const body = (await request.json()) as { account?: string; content?: string }
+    if (!body.account?.trim()) return fail(400, "SYS_BAD_REQUEST", "请填写账号")
+    if ((body.content ?? "").trim().length < 10) return fail(400, "SYS_BAD_REQUEST", "申诉说明至少 10 个字")
+    return ok({ submittedAt: new Date().toISOString() })
+  }),
+
+  http.get(`${API}/appeal/pending-reply`, () => ok(null)),
+]
+
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
@@ -531,4 +544,5 @@ export const handlers = [
   ...twoFaHandlers,
   ...settingsExtraHandlers,
   ...tempboxHandlers,
+  ...appealHandlers,
 ]
