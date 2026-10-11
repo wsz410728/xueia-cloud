@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/page-header"
 import { ProfileCard } from "./ProfileCard"
+import { TwoFactorCard } from "./TwoFactorCard"
 
 /**
  * 账户设置页 —— 对齐参考站结构：
@@ -62,6 +63,11 @@ export function SettingsPage() {
       id: "profile",
       category: "account",
       node: <ProfileCard />,
+    },
+    {
+      id: "twofa",
+      category: "account",
+      node: <TwoFactorCard />,
     },
     {
       id: "danger-delete",

@@ -332,4 +332,57 @@ export const settingsHandlers = [
   }),
 ]
 
-export const handlers = [...authHandlers, ...mailboxHandlers, ...settingsHandlers]
+// ===== 2FA 域 =====
+
+const TOTP_SECRET = "JBSWY3DPEHPK3PXP"
+
+function makeRecoveryCodes() {
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  return Array.from({ length: 8 }, () => {
+    const raw = Array.from({ length: 8 }, () => ALPHABET[Math.floor(Math.random() * 32)]).join("")
+    return raw.slice(0, 4) + "-" + raw.slice(4)
+  })
+}
+
+export const twoFaHandlers = [
+  http.post(`${API}/settings/2fa/totp/start`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const label = encodeURIComponent(`${brand.fullName}:${session.user.username}`)
+    const issuer = encodeURIComponent(brand.fullName)
+    return ok({
+      secret: TOTP_SECRET,
+      otpauthUrl: `otpauth://totp/${label}?secret=${TOTP_SECRET}&issuer=${issuer}`,
+    })
+  }),
+
+  http.post(`${API}/settings/2fa/totp/confirm`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { code } = (await request.json()) as { code: string }
+    if (code !== "123456") return fail(400, "S2FA_CODE_INVALID", "动态码错误，请重试")
+    return ok({ recoveryCodes: makeRecoveryCodes() })
+  }),
+
+  http.post(`${API}/settings/2fa/totp/disable`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { password } = (await request.json()) as { password: string }
+    if (!password) return fail(400, "SYS_BAD_REQUEST", "请输入登录密码")
+    return ok(null)
+  }),
+
+  http.post(`${API}/settings/2fa/email`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok(null)
+  }),
+
+  http.post(`${API}/settings/2fa/email/disable`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok(null)
+  }),
+
+  http.post(`${API}/settings/2fa/recovery/regenerate`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({ recoveryCodes: makeRecoveryCodes() })
+  }),
+]
+
+export const handlers = [...authHandlers, ...mailboxHandlers, ...settingsHandlers, ...twoFaHandlers]

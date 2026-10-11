@@ -21,8 +21,7 @@ function assertAvatar(file: File) {
 }
 
 export const settingsApi = {
-  updateNickname: async (nickname: string) => {
-    if (!NICKNAME_RE.test(nickname)) {
+  updateNickname: async (nickname: string) => {    if (!NICKNAME_RE.test(nickname)) {
       throw new ApiError("SETTINGS_NICKNAME_INVALID", "昵称 2-16 位中文/英文/数字/下划线", 0)
     }
     return post<{ nickname: string }>("/settings/nickname", { nickname })
@@ -43,4 +42,32 @@ export const settingsApi = {
   },
 
   deleteAvatar: () => post<null>("/settings/avatar/delete"),
+
+  // ===== 2FA（契约见 docs/api.md §3.3）=====
+
+  /** POST /settings/2fa/totp/start —— 返回密钥与 otpauth:// 链接（二维码内容） */
+  startTotp: () => post<{ secret: string; otpauthUrl: string }>("/settings/2fa/totp/start"),
+
+  /** POST /settings/2fa/totp/confirm —— 校验 6 位码，通过后返回恢复码（只显示一次） */
+  confirmTotp: async (code: string) => {
+    if (!/^\d{6}$/.test(code)) {
+      throw new ApiError("S2FA_CODE_INVALID", "请输入 6 位动态码", 0)
+    }
+    return post<{ recoveryCodes: string[] }>("/settings/2fa/totp/confirm", { code })
+  },
+
+  /** POST /settings/2fa/totp/disable —— 关闭动态码验证（需登录密码） */
+  disableTotp: async (password: string) => {
+    if (!password) throw new ApiError("SYS_BAD_REQUEST", "请输入登录密码", 0)
+    return post<null>("/settings/2fa/totp/disable", { password })
+  },
+
+  /** POST /settings/2fa/email —— 开启邮箱二次验证 */
+  enableEmail2fa: () => post<null>("/settings/2fa/email"),
+
+  /** POST /settings/2fa/email/disable —— 关闭邮箱二次验证 */
+  disableEmail2fa: () => post<null>("/settings/2fa/email/disable"),
+
+  /** POST /settings/2fa/recovery/regenerate —— 重新生成恢复码（旧的立即作废） */
+  regenerateRecovery: () => post<{ recoveryCodes: string[] }>("/settings/2fa/recovery/regenerate"),
 }
