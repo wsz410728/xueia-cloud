@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { Link, NavLink, Navigate, Outlet, useLocation } from "react-router"
 import {
-  AtSign,
   Bell,
   Bot,
   Cloud,
+  Coins,
   Globe,
   IdCard,
   Inbox,
@@ -12,16 +12,13 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  MessageCircle,
-  MessagesSquare,
   Moon,
   Network,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
-  ShoppingCart,
+  Sparkles,
   Sun,
-  Trophy,
   Users,
   X,
 } from "lucide-react"
@@ -61,56 +58,27 @@ export function RequireAuth() {
   return <Outlet />
 }
 
-/** 侧栏导航分组（对齐原站信息架构，去掉域名/网盘） */
-const NAV_GROUPS: Array<{ title?: string; items: Array<{ to: string; icon: React.ElementType; key: string }> }> = [
-  {
-    items: [{ to: "/dashboard", icon: LayoutDashboard, key: "nav.overview" }],
-  },
-  {
-    title: "nav.email",
-    items: [
-      { to: "/dashboard/email", icon: Inbox, key: "nav.email" },
-      { to: "/dashboard/tempbox", icon: Package, key: "nav.tempbox" },
-    ],
-  },
-  {
-    title: "nav.ai",
-    items: [
-      { to: "/dashboard/ai", icon: Bot, key: "nav.ai" },
-      { to: "/dashboard/frp", icon: Network, key: "nav.frp" },
-      { to: "/dashboard/proxy", icon: Globe, key: "nav.proxy" },
-    ],
-  },
-  {
-    title: "nav.community",
-    items: [
-      { to: "/dashboard/community", icon: Users, key: "nav.community" },
-      { to: "/dashboard/chat", icon: MessagesSquare, key: "nav.chat" },
-      { to: "/dashboard/dm", icon: MessageCircle, key: "nav.dm" },
-      { to: "/dashboard/messages", icon: Bell, key: "nav.messages" },
-    ],
-  },
-  {
-    title: "nav.points",
-    items: [
-      { to: "/dashboard/points", icon: ShoppingCart, key: "nav.points" },
-      { to: "/dashboard/leaderboard", icon: Trophy, key: "nav.leaderboard" },
-      { to: "/dashboard/achievements", icon: Trophy, key: "nav.achievements" },
-      { to: "/dashboard/donations", icon: AtSign, key: "nav.donations" },
-    ],
-  },
-  {
-    title: "nav.space",
-    items: [
-      { to: "/dashboard/profile", icon: IdCard, key: "nav.profile" },
-      { to: "/dashboard/toolbox", icon: Package, key: "nav.toolbox" },
-      { to: "/dashboard/feedback", icon: MessageCircle, key: "nav.feedback" },
-      { to: "/dashboard/settings", icon: IdCard, key: "nav.settings" },
-    ],
-  },
+/** 侧栏主导航（平铺，对齐参考站信息架构；域名/网盘已裁剪，含创想造物） */
+const NAV_MAIN: Array<{ to: string; icon: React.ElementType; key: string }> = [
+  { to: "/dashboard", icon: LayoutDashboard, key: "nav.overview" },
+  { to: "/dashboard/email", icon: Inbox, key: "nav.email" },
+  { to: "/dashboard/tempbox", icon: Package, key: "nav.tempbox" },
+  { to: "/dashboard/ai", icon: Bot, key: "nav.ai" },
+  { to: "/dashboard/frp", icon: Network, key: "nav.frp" },
+  { to: "/dashboard/proxy", icon: Globe, key: "nav.proxy" },
+  { to: "/dashboard/profile", icon: IdCard, key: "nav.profile" },
+  { to: "/dashboard/community", icon: Users, key: "nav.community" },
+  { to: "/dashboard/gallery", icon: Sparkles, key: "nav.gallery" },
+  { to: "/dashboard/toolbox", icon: Package, key: "nav.toolbox" },
 ]
 
-// 占位说明已并入顶部 import，无底部 import。
+/** 侧栏底部独立项（参考站同款：反馈/捐献/积分/设置） */
+const NAV_FOOTER: Array<{ to: string; key: string }> = [
+  { to: "/dashboard/feedback", key: "nav.feedback" },
+  { to: "/dashboard/donations", key: "nav.donations" },
+  { to: "/dashboard/points", key: "nav.points" },
+  { to: "/dashboard/settings", key: "nav.settings" },
+]
 
 function NavItem({ to, icon: Icon, label, collapsed }: { to: string; icon: React.ElementType; label: string; collapsed: boolean }) {
   return (
@@ -132,7 +100,86 @@ function NavItem({ to, icon: Icon, label, collapsed }: { to: string; icon: React
   )
 }
 
-/** 玻璃拟态侧栏（可折叠 + 移动端抽屉） */
+/** 底部用户块（参考站同款：头像角色环 + 用户名 + 邮箱 + 账户菜单） */
+function UserBlock({ collapsed }: { collapsed: boolean }) {
+  const { t } = useT()
+  const { data: user } = useMe()
+  const clearMe = useClearMe()
+  if (!user) return null
+
+  async function onLogout() {
+    try {
+      await authApi.logout()
+    } finally {
+      clearMe()
+      window.location.assign("/")
+    }
+  }
+
+  if (collapsed) {
+    return (
+      <div className="flex justify-center border-t p-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn("rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring", user.role === "admin" && "role-ring role-ring-admin", user.role === "super" && "role-ring role-ring-super")}
+              aria-label="account"
+            >
+              <Avatar className="size-9">
+                <AvatarFallback>{(user.nickname ?? user.username).slice(0, 2)}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuLabel>
+              <p className="font-medium">{user.nickname ?? user.username}</p>
+              <p className="text-xs font-normal text-muted-foreground">{user.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild><Link to="/dashboard/settings">{t("nav.settings")}</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to={`/u/${user.username}`}>{t("nav.space")}</Link></DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onLogout}><LogOut className="size-4" />{t("nav.logout")}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2.5 border-t p-3">
+      <button
+        type="button"
+        className={cn("shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring", user.role === "admin" && "role-ring role-ring-admin", user.role === "super" && "role-ring role-ring-super")}
+        aria-label="account"
+      >
+        <Avatar className="size-9">
+          <AvatarFallback>{(user.nickname ?? user.username).slice(0, 2)}</AvatarFallback>
+        </Avatar>
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{user.nickname ?? user.username}</p>
+        <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={t("nav.settings")}>
+            <Menu className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem asChild><Link to="/dashboard/settings">{t("nav.settings")}</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to={`/u/${user.username}`}>{t("nav.space")}</Link></DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onLogout}><LogOut className="size-4" />{t("nav.logout")}</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+/** 玻璃拟态侧栏：平铺主导航 + 底部独立项 + 用户块（可折叠 + 移动端抽屉） */
 function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { t } = useT()
   return (
@@ -146,31 +193,52 @@ function Sidebar({ collapsed }: { collapsed: boolean }) {
         <Cloud className="size-6 shrink-0" />
         {!collapsed && <span className="truncate">{brand.name}</span>}
       </Link>
-      <nav className="flex-1 space-y-4 overflow-y-auto p-3">
-        {NAV_GROUPS.map((group, gi) => (
-          <div key={gi} className="space-y-1">
-            {group.title && !collapsed && (
-              <p className="px-3 pt-2 text-xs font-medium text-muted-foreground">{t(group.title)}</p>
-            )}
-            {group.items.map((item) => (
-              <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} collapsed={collapsed} />
-            ))}
-          </div>
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        {NAV_MAIN.map((item) => (
+          <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} collapsed={collapsed} />
         ))}
       </nav>
+      <div className="space-y-1 border-t p-3">
+        {NAV_FOOTER.map((item) =>
+          collapsed ? (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              title={t(item.key)}
+              className="flex justify-center rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              {t(item.key).slice(0, 1)}
+            </NavLink>
+          ) : (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center rounded-md px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )
+              }
+            >
+              <span className="truncate">{t(item.key)}</span>
+            </NavLink>
+          )
+        )}
+      </div>
+      <UserBlock collapsed={collapsed} />
     </aside>
   )
 }
 
-/** 顶栏：移动端菜单 + 双铃铛（站内消息/私信，mock 未读数）+ 语言 + 主题 + 用户菜单 */
+/** 顶栏：移动端菜单 + 积分 chip + 双铃铛（站内消息/私信，mock 未读数）+ 语言 + 主题 + 用户菜单（对齐参考站） */
 function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const { t, lang, setLang } = useT()
   const { data: user } = useMe()
   const clearMe = useClearMe()
   const [, setThemeTick] = useState(0)
 
-  const unreadMessages = 2
-  const unreadDm = 1
+  const unreadMessages = 7
+  const unreadDm = 2
 
   async function onLogout() {
     try {
@@ -183,7 +251,7 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
 
   function BellIcon({ count, to, label }: { count: number; to: string; label: string }) {
     return (
-      <Button variant="ghost" size="icon" className="relative" onClick={() => (window.location.hash = "")} asChild>
+      <Button variant="ghost" size="icon" className="relative" asChild>
         <Link to={to} aria-label={label}>
           <Bell className="size-4" />
           {count > 0 && (
@@ -206,8 +274,16 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
       </div>
 
       <div className="flex items-center gap-1">
-        {user && <BellIcon count={unreadMessages} to="/dashboard/messages" label={t("nav.messages")} />}
+        {user && (
+          <Button variant="ghost" size="sm" className="gap-1.5" asChild>
+            <Link to="/dashboard/points" aria-label={t("dash.points.chip")}>
+              <Coins className="size-4" />
+              <span className="text-xs tabular-nums">128</span>
+            </Link>
+          </Button>
+        )}
         {user && <BellIcon count={unreadDm} to="/dashboard/dm" label={t("nav.dm")} />}
+        {user && <BellIcon count={unreadMessages} to="/dashboard/messages" label={t("nav.messages")} />}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -309,10 +385,22 @@ export function DashboardLayout() {
               </Button>
             </div>
             <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-              {NAV_GROUPS.flatMap((g) => g.items).map((item) => (
+              {NAV_MAIN.map((item) => (
                 <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} collapsed={false} />
               ))}
             </nav>
+            <div className="space-y-1 border-t p-3">
+              {NAV_FOOTER.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className="flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                >
+                  <span className="truncate">{t(item.key)}</span>
+                </NavLink>
+              ))}
+            </div>
+            <UserBlock collapsed={false} />
           </div>
         </div>
       )}

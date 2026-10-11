@@ -43,6 +43,7 @@ export function AppRoutes() {
             <Route path="profile" element={<PlaceholderPage moduleKey="nav.profile" />} />
             <Route path="space" element={<PlaceholderPage moduleKey="nav.space" />} />
             <Route path="community" element={<PlaceholderPage moduleKey="nav.community" />} />
+            <Route path="gallery" element={<PlaceholderPage moduleKey="nav.gallery" />} />
             <Route path="chat" element={<PlaceholderPage moduleKey="nav.chat" />} />
             <Route path="dm" element={<PlaceholderPage moduleKey="nav.dm" />} />
             <Route path="messages" element={<PlaceholderPage moduleKey="nav.messages" />} />

@@ -33,6 +33,7 @@
 - **目标**：从零复刻 cloud.doulor.cn（Doulor Cloud，共建式私域云平台）的**前端**，品牌替换为用户自己的 **Xueia（域名 xueia.com）**，最终目标是**真实运营**（API 层按真实端点定型，后端可后补）。
 - **状态**：设计已定稿并经用户确认，**尚未脚手架化**（无 package.json）。
 - **进度日志**（每完成一项追加一行，倒序）：
+  - 2026-10-11 用户拍板：侧栏改参考站同款**平铺布局 + 底部用户块**（已重构并实测同构）；**新增「创想造物」模块**（造物集，批次④，替代未纳入的 AI实验室生态位）；顶栏加积分 chip。三份文档同步。原站「AI实验室」确认不纳入。
   - 2026-10-11 对比验收轮：登录参考站实测（账号 jooyang），同口径提取结构+计算样式。**发现并修复重大 bug：main.tsx 漏 import index.css，全站此前为无样式渲染**。深色令牌对齐参考站（底 #1a1a1a、卡片同底色+白 15% 边框、圆角 6px）、概览标题逐字动画。另发现参考站新增模块「AI实验室(/dashboard/lab)」「创想造物(/dashboard/gallery)」未入范围，待用户决策。
   - 2026-10-11 **批次①完成并推送**：脚手架（Vite7+React19+TS strict+Tailwind v4+RR v7+Query v5+RHF/zod+MSW+Vitest）、设计系统（15 组件+令牌+云朵背景+玻璃拟态+角色环）、品牌配置（emailDomain 可配）、i18n zh/en、落地页九卡、认证三页（登录含 2FA 三方式+环境自检）、控制台外壳（守卫+玻璃侧栏+双铃铛）、概览页、邮箱收件箱 mock 页（加料演示）、全量占位路由、PWA（manifest+SW+favicon）、chunk 自愈。构建通过（首屏 gzip≈190KB）；WSL vitest 10/10 通过；浏览器实测登录→2FA→概览→邮箱全链路。修复两处契约 bug：/me 401 误触发登录跳转；AUTH_2FA_REQUIRED 被改写为 AUTH_REQUIRED 导致票据丢失（ApiError 现携带 data，契约见 docs/api.md）。
   - 2026-10-07 环境就绪：Windows 装 Node v24 + git 2.55 + gh 2.102（已登录 wsz410728）；WSL Ubuntu 26.04 装 Node v22。工作流定版：开发在本机、测试在 WSL、每次代码更新推送 GitHub（§7）。npm 定版；视觉定版黑白极简；Logo/社交占位、`emailDomain` 可配（已同步设计文档）。仓库公开：wsz410728/xueia-cloud。
@@ -49,7 +50,7 @@
 | 域名/DNS 管理、直链网盘 | ❌ 明确不要 | — |
 | 邮箱（域名邮箱+网页收件箱）、临时分享箱（游客取件）、**账户设置（含 2FA 管理/注销）、封禁申诉** | ✅ 保留 | ② |
 | AI 中转站、捐献与邀请、积分与商城（签到/兑换券）、**公告+强制确认弹窗** | ✅ 保留 | ③ |
-| 社区广场、聊天室、私信、站内消息、排行榜、成就、**称号**、个人名片/空间、**反馈**、**活动页（游客可看）** | ✅ 保留 | ④ |
+| 社区广场、聊天室、私信、站内消息、排行榜、成就、**称号**、个人名片/空间、**反馈**、**活动页（游客可看）**、**创想造物（原站「造物集」：用户网页作品托管展示，含搜索/排序/点赞/我的作品，2026-10-11 对比后加入）** | ✅ 保留 | ④ |
 | 内网穿透、代理节点、工具箱（约 35 个纯前端小工具） | ✅ 保留 | ⑤ |
 | 管理后台、PWA 完善、公开 API、OAuth2 提供方 | ✅ 保留 | ⑥ |
 
@@ -97,7 +98,8 @@ src/
 
 - 公共：`/`、`/login`、`/register`、`/forgot-password`、`/terms`、`/privacy`、`/u/:username`、`/tempbox` 取件入口、`/appeal` 申诉入口。
 - `/dashboard/*` 整组 **requiresAuth**，守卫支持**白名单例外**（`/dashboard/tempbox`、`/dashboard/community`、`/dashboard/events/:id` 游客可访问——原站实测确认的设计：内容公开可看，交互才需登录）。
-- 全量子路由先建「建设中」占位页：email、tempbox、settings、ai、frp、proxy、profile、space、community、chat、dm、messages、points、leaderboard、achievements、donations、toolbox、feedback、events/:id、apiset、oauth、admin。
+- 全量子路由先建「建设中」占位页：email、tempbox、settings、ai、frp、proxy、profile、space、community、gallery、chat、dm、messages、points、leaderboard、achievements、donations、toolbox、feedback、events/:id、apiset、oauth、admin。
+- **侧栏布局对齐参考站实测结构**：平铺主导航（概览/邮箱/临时分享箱/AI 中转站/内网穿透/代理节点/个人名片/社区广场/创想造物/工具箱）+ 底部独立项（反馈/捐献与邀请/积分与商城/账户设置）+ **底部用户块**（头像角色环 + 昵称 + 邮箱 + 账户菜单）；顶栏含积分 chip + 两个未读铃铛 + 语言 + 主题 + 账户菜单。**不做分组标题式侧栏**（2026-10-11 用户拍板）。原站「AI实验室（实验 中）」未纳入范围。
 - 401 由 api-client 统一跳 `/login?from=<当前路径>`。
 
 ## 4. 目标网站（doulor.cn）编码规范观察 —— 复刻时对齐的模式

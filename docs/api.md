@@ -179,6 +179,7 @@
 - **donations/invites**（批次 3）：`/donations`(+`/ai/probe`)、`/my-invites`(+`/claim`)
 - **community/chat/dm/notifications/feedback**（批次 4）：`/community/*`、`/chat/*`、`/dm`(+`/conversations`/`/requests`/`/seen`/`/unread`)、`/notifications/*`、`/feedback`(+`/read`/`/reply`/`/upload-image`)
 - **profile/space/titles/achievements/events/leaderboard**（批次 4）：`/profile`(+`/enable`/`/publish`/`/preview`)、`/my-space`、`/titles/{mine,display}`、`/achievements`、`/events`(+`/image`)、`/fun-links`（活动页游客可看，守卫白名单）
+- **gallery 创想造物**（批次 4，游客可看）：`/gallery`（作品列表：搜索/排序）、`/gallery/collection`（创想集）、`/gallery/mine`（我的作品）——参考原站「造物集」语义，批次 4 时按模板登记
 - **frp**（批次 5）：`/frp`(+`/apply`/`/cancel`/`/enable`/`/disable`)；**toolbox** 纯前端无接口
 - **apiset/oauth**（批次 6）：`/dev/keys` 复用、`/api-doc`、`/oauth/{authorize/decision,grants,my-clients}`；**admin**：`/admin/*` 全族（批次 6）
 
