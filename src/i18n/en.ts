@@ -537,4 +537,17 @@ export const en: Record<string, string> = {
   "tb.shareLinkHint": "Send the link — it auto-fills and unlocks the box, no typing needed.",
   "tb.restart": "Start over (discard this code)",
   "tb.storageNote": "Text lives in the database; files go to object storage's temporary directory and auto-expire.",
+
+  "tb.pickup.title": "Enter pickup code",
+  "tb.pickup.desc": "Guests can view and download without an account.",
+  "tb.pickup.expired": "This code has expired or doesn't exist. Please check and retry.",
+  "tb.pickup.another": "Unlock another code",
+  "tb.pickup.expires": "Auto-cleared in {n} minutes",
+  "tb.pickup.filesBadge": "Files / images",
+
+  "tb.unlock": "Unlock",
+  "tb.codePlaceholder": "Enter pickup code",
+  "tb.textBadge": "Text",
+  "tb.copyText": "Copy text",
+  "tb.download": "Download",
 }

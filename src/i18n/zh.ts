@@ -557,4 +557,17 @@ export const zh: Record<string, string> = {
   "tb.shareLinkHint": "把分享链接发给对方，点开就会自动填入并解锁，不用手输。",
   "tb.restart": "重新开始（丢弃当前接收码）",
   "tb.storageNote": "文字直接存于数据库；文件存于对象存储的 temporary 目录，到期后自动清除。",
+
+  "tb.pickup.title": "输入接收码解锁",
+  "tb.pickup.desc": "访客无需登录即可查看与下载。",
+  "tb.pickup.expired": "这个接收码已过期或不存在，请核对后重试。",
+  "tb.pickup.another": "解锁另一个接收码",
+  "tb.pickup.expires": "{n} 分钟后自动清除",
+  "tb.pickup.filesBadge": "文件 / 图片",
+
+  "tb.unlock": "解锁",
+  "tb.codePlaceholder": "输入接收码",
+  "tb.textBadge": "纯文本",
+  "tb.copyText": "复制文字",
+  "tb.download": "下载",
 }

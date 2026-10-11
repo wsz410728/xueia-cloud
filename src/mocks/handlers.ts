@@ -467,6 +467,9 @@ function newBoxCode() {
   return code
 }
 
+// 预置测试码（单测/E2E 用）
+mockTempboxes.set("ABC123", { kind: "text", text: "hello from mock", files: [], expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() })
+
 export const tempboxHandlers = [
   http.get(`${API}/tempbox/config`, () =>
     // 公开接口（取件页也要展示规则）

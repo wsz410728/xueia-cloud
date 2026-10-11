@@ -12,6 +12,7 @@ import { PointsPage } from "@/features/points/PointsPage"
 import { SectionPlaceholder } from "@/features/placeholder/SectionPlaceholder"
 import { SettingsPage } from "@/features/settings/SettingsPage"
 import { ShareBoxPage } from "@/features/tempbox/ShareBoxPage"
+import { PickupPage } from "@/features/tempbox/PickupPage"
 import { PlaceholderPage } from "@/features/placeholder/PlaceholderPage"
 import { NotFoundPage } from "@/features/placeholder/NotFoundPage"
 
@@ -31,7 +32,7 @@ export function AppRoutes() {
         <Route path="/terms" element={<PlaceholderPage />} />
         <Route path="/privacy" element={<PlaceholderPage />} />
         <Route path="/u/:username" element={<PlaceholderPage />} />
-        <Route path="/tempbox" element={<PlaceholderPage />} />
+        <Route path="/tempbox" element={<PickupPage />} />
         <Route path="/appeal" element={<PlaceholderPage />} />
 
         {/* 控制台：requiresAuth */}
