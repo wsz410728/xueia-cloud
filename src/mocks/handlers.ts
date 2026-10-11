@@ -450,10 +450,82 @@ export const settingsExtraHandlers = [
   }),
 ]
 
+// ===== 临时分享箱（config/get/create；pickup 为公开接口，无需会话） =====
+
+const TB_CODE_RE = /^[A-Z0-9]{6}$/
+const mockTempboxes = new Map<
+  string,
+  { kind: "text" | "files"; text?: string; files: Array<{ name: string; size: number; content: string }>; expiresAt: string }
+>()
+
+function newBoxCode() {
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  let code = ""
+  do {
+    code = Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * 32)]).join("")
+  } while (mockTempboxes.has(code))
+  return code
+}
+
+export const tempboxHandlers = [
+  http.get(`${API}/tempbox/config`, () =>
+    // 公开接口（取件页也要展示规则）
+    ok({ retentionMinutes: 30, maxFileSizeMB: 100, maxFiles: 100, maxLive: 10 })
+  ),
+
+  http.post(`${API}/tempbox/create`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "分享需要登录")
+    const ct = request.headers.get("Content-Type") ?? ""
+    let kind: "text" | "files"
+    let text: string | undefined
+    let files: Array<{ name: string; size: number; content: string }> = []
+    if (ct.includes("multipart/form-data")) {
+      const form = await request.formData()
+      kind = "files"
+      for (const f of form.getAll("files")) {
+        if (f instanceof File) {
+          files.push({ name: f.name, size: f.size, content: `mock-content-of-${f.name}` })
+        }
+      }
+    } else {
+      const body = (await request.json()) as { kind: "text"; text: string }
+      kind = "text"
+      text = body.text
+    }
+    const code = newBoxCode()
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+    mockTempboxes.set(code, { kind, text, files, expiresAt })
+    const origin = new URL(request.url).origin
+    return ok({ code, link: `${origin}/tempbox?code=${code}`, expiresAt })
+  }),
+
+  http.get(`${API}/tempbox/pickup`, ({ request }) => {
+    const code = (new URL(request.url).searchParams.get("code") ?? "").toUpperCase()
+    if (!TB_CODE_RE.test(code) || !mockTempboxes.has(code)) {
+      return fail(404, "TB_CODE_EXPIRED", "接收码已过期或不存在")
+    }
+    const box = mockTempboxes.get(code)!
+    if (box.kind === "text") return ok({ kind: "text", text: box.text ?? "", expiresAt: box.expiresAt })
+    return ok({
+      kind: "files",
+      expiresAt: box.expiresAt,
+      files: box.files.map((f) => ({ name: f.name, size: f.size, url: `data:text/plain;base64,${btoa(f.content)}` })),
+    })
+  }),
+
+  // 固定测试码：E2E/单测用（有效，包含文本）
+  http.post(`${API}/tempbox/_seed`, async ({ request }) => {
+    const { code, text } = (await request.json()) as { code: string; text: string }
+    mockTempboxes.set(code, { kind: "text", text, files: [], expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() })
+    return ok(null)
+  }),
+]
+
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
   ...settingsHandlers,
   ...twoFaHandlers,
   ...settingsExtraHandlers,
+  ...tempboxHandlers,
 ]

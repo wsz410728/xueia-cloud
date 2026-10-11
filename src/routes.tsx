@@ -11,6 +11,7 @@ import { LeaderboardPage, AchievementsPage } from "@/features/leaderboard/Leader
 import { PointsPage } from "@/features/points/PointsPage"
 import { SectionPlaceholder } from "@/features/placeholder/SectionPlaceholder"
 import { SettingsPage } from "@/features/settings/SettingsPage"
+import { ShareBoxPage } from "@/features/tempbox/ShareBoxPage"
 import { PlaceholderPage } from "@/features/placeholder/PlaceholderPage"
 import { NotFoundPage } from "@/features/placeholder/NotFoundPage"
 
@@ -43,7 +44,7 @@ export function AppRoutes() {
             <Route path="achievements" element={<AchievementsPage />} />
             <Route path="points" element={<PointsPage />} />
             {/* 已建骨架，待批次实现 */}
-            <Route path="tempbox" element={<SectionPlaceholder titleKey="nav.tempbox" subtitleKey="tb.subtitle" batch="②" />} />
+            <Route path="tempbox" element={<ShareBoxPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="ai" element={<SectionPlaceholder titleKey="nav.ai" subtitleKey="ai.subtitle" batch="③" />} />
             <Route path="donations" element={<SectionPlaceholder titleKey="nav.donations" subtitleKey="don.subtitle" batch="③" />} />
