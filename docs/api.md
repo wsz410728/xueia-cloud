@@ -174,10 +174,13 @@
 | `POST /mailbox/{id}/update` | 修改转发目标 | `forwardTo: string \| null`；**变更后服务端重置 `forwardVerified=false`**（验证只能走 forward-verify） |
 | `POST /mailbox/{id}/delete` | 删除地址 | — |
 | `GET /mailbox/{id}` | 消息列表 | — |
+| `GET /mailbox/{id}/messages/{mid}` | 单封详情（含 `body` 纯文本正文） | 不存在 → `SYS_NOT_FOUND` |
 | `POST /mailbox/{id}/messages/{mid}/read` | 单封已读 | — |
+| `POST /mailbox/{id}/messages/{mid}/reply` | 回复邮件 | `body: string`（trim 后非空，否则 `SYS_BAD_REQUEST`） |
+| `POST /mailbox/messages/batch-delete` | 批量删除 | `mailboxId: string; ids: string[]` |
 | `POST /mailbox/read-all` | 全部已读 | `mailboxId: string` |
 
-待实现（批次②后续任务登记）：`/mailbox/{id}/messages/{mid}`(`/reply`)、`/mailbox/messages/batch-delete`、`/mailbox/forward-verify`、`/mailbox/temp`(+`/{id}/refresh`)。
+待实现（批次②后续任务登记）：`/mailbox/forward-verify`、`/mailbox/temp`(+`/{id}/refresh`)。
 
 ### 3.3 账户与安全域 settings（批次 2，占位待登记）
 
