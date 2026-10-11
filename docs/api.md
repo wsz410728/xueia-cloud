@@ -76,6 +76,8 @@
 | `TB_TOO_MANY_FILES` | 400 | 文件数超过配置上限（前端前置拦截） |
 | `TB_CODE_EXPIRED` | 404 | 接收码不存在或已过期（取件页显示友好过期态） |
 | `AI_PASSWORD_MISMATCH` | 400 | AI 绑定密码与本站登录密码不一致 |
+| `DON_FORMAT_INVALID` | 400 | 捐献 payload 格式不合规（前端同规则前置校验） |
+| `DON_DUPLICATE` | 409 | 同一资源重复提交 |
 
 ## 3. 接口登记表
 
@@ -248,7 +250,15 @@
 | `GET /ai/models` | 全部模型 + 推荐档位 | — |
 | `GET /ai/subscriptions` | 免费订阅 + 其他订阅 | — |
 
-### 3.7 其余域（批次 4-6，占位待登记）
+### 3.7 捐献域 donations（批次③，已实现 mock 🟡）
+
+| 接口 | 说明 | 参数/备注 |
+|---|---|---|
+| `GET /donations` | 资源类型（含解锁态）+ 我的捐献记录 | 需登录 |
+| `POST /donations` | 提交贡献 | `{type: "ai"\|"frp"\|"proxy", payload}`；格式错 `DON_FORMAT_INVALID`、重复 `DON_DUPLICATE` |
+| `POST /donations/{id}/cancel` | 撤回待审核申请 | 仅 pending 可撤回 |
+
+### 3.8 其余域（批次 4-6，占位待登记）
 
 - **tempbox**：`/tempbox/config`、`/tempbox/create`（批次 2）
 - **公告/强制确认**（批次 3）：`/announcements`、`/notice/pending`、`/notice/ack`

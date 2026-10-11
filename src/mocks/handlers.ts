@@ -624,6 +624,60 @@ export const aiHandlers = [
   }),
 ]
 
+// ===== 捐献与邀请（批次③）=====
+
+interface DonationState {
+  id: string
+  type: "ai" | "frp" | "proxy"
+  status: "pending" | "approved" | "rejected" | "expired"
+  submittedAt: string
+  signature: string
+}
+
+const mockDonations: DonationState[] = []
+
+export const donationHandlers = [
+  http.get(`${API}/donations`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const types = [
+      { key: "ai", label: "AI 模型", desc: "贡献一个模型渠道，让其他用户也能用", unlocked: session.user.aiUnlocked ?? false, grantsPermission: true },
+      { key: "frp", label: "内网穿透", desc: "提供完整可用的 config.yml", unlocked: false, grantsPermission: true },
+      { key: "proxy", label: "代理节点", desc: "贡献你的代理订阅链接", unlocked: false, grantsPermission: true },
+    ]
+    const records = mockDonations.map(({ signature, ...rest }) => rest)
+    return ok({ types, records })
+  }),
+
+  http.post(`${API}/donations`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { type, payload } = (await request.json()) as {
+      type: "ai" | "frp" | "proxy"
+      payload: Record<string, string>
+    }
+    // 重复提交同一资源（签名相同）拒绝；pending/approved 都算
+    const signature = `${type}:${payload.link ?? `${payload.baseUrl ?? ""}:${payload.key ?? ""}:${payload.config ?? ""}`}`
+    if (mockDonations.some((d) => d.signature === signature && d.status !== "rejected")) {
+      return fail(409, "DON_DUPLICATE", "你已提交过同一资源，请勿重复提交")
+    }
+    mockDonations.push({
+      id: `d-${Date.now()}`,
+      type,
+      status: "pending",
+      submittedAt: new Date().toISOString(),
+      signature,
+    })
+    return ok({ id: mockDonations[mockDonations.length - 1].id })
+  }),
+
+  http.post(`${API}/donations/:id/cancel`, ({ params }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const d = mockDonations.find((x) => x.id === params.id)
+    if (!d) return fail(404, "SYS_NOT_FOUND", "记录不存在")
+    if (d.status !== "pending") return fail(400, "SYS_BAD_REQUEST", "只能撤回待审核的申请")
+    mockDonations.splice(mockDonations.indexOf(d), 1)
+    return ok(null)
+  }),
+]
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
@@ -633,4 +687,5 @@ export const handlers = [
   ...tempboxHandlers,
   ...appealHandlers,
   ...aiHandlers,
+  ...donationHandlers,
 ]
