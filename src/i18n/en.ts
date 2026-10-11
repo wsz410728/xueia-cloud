@@ -400,4 +400,15 @@ export const en: Record<string, string> = {
   "mb.reply.send": "Send reply",
   "mb.reply.sent": "Reply sent",
   "mb.deleteSelected": "Delete selected ({n})",
+
+  "mb.temp.validUntil": "Valid until {time}",
+  "mb.verify.send": "Send code",
+  "mb.verify.sent": "Code sent to {to}",
+  "mb.verify.code": "Verification code",
+  "mb.verify.codePh": "6-digit code",
+  "mb.verify.submit": "Verify",
+  "mb.verify.ok": "Email verified, forwarding is live",
+  "mb.verify.verified": "Verified",
+  "mb.verify.desc": "This email is verified and can receive forwarded mail.",
+  "mb.verify.note": "The code is valid for 10 minutes. Never share it.",
 }

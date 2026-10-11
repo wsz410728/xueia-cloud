@@ -117,6 +117,24 @@ function AddressSettingsDialog({
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   })
 
+  // 转发验证（send → verify 两步）
+  const [verifyCode, setVerifyCode] = useState("")
+  const sendVerify = useMutation({
+    mutationFn: () => mailboxApi.sendForwardVerify(address!.id, address!.forwardTo as string),
+    onSuccess: (d) => toast.success(t("mb.verify.sent", { to: d.sentTo })),
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+  const submitVerify = useMutation({
+    mutationFn: () => mailboxApi.verifyForward(address!.id, verifyCode),
+    onSuccess: () => {
+      toast.success(t("mb.verify.ok"))
+      setVerifyCode("")
+      void qc.invalidateQueries({ queryKey: ["mailbox", "addresses"] })
+      onOpenChange(false)
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
   return (
     <Dialog open={!!address} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -148,6 +166,50 @@ function AddressSettingsDialog({
           <p className="text-xs text-muted-foreground">{t("mb.addr.forwardNote")}</p>
         </div>
 
+        {/* 转发验证（真实邮箱验证） */}
+        {address?.forwardTo && (
+          <div className="space-y-2 rounded-md border bg-muted/40 p-3">
+            {address.forwardVerified ? (
+              <p className="flex items-center gap-2 text-xs">
+                <Badge variant="success">{t("mb.verify.verified")}</Badge>
+                {t("mb.verify.desc")}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{t("mb.addr.forwardUnverified")}</Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={sendVerify.isPending}
+                    onClick={() => sendVerify.mutate()}
+                  >
+                    {t("mb.verify.send")}
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    inputMode="numeric"
+                    maxLength={6}
+                    aria-label={t("mb.verify.code")}
+                    placeholder={t("mb.verify.codePh")}
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value.trim())}
+                  />
+                  <Button
+                    size="sm"
+                    disabled={verifyCode.length !== 6 || submitVerify.isPending}
+                    onClick={() => submitVerify.mutate()}
+                  >
+                    {t("mb.verify.submit")}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("mb.verify.note")}</p>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-2 border-t pt-3">
           {!confirmDelete ? (
             <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
@@ -171,36 +233,60 @@ function AddressSettingsDialog({
   )
 }
 
-/** 临时邮箱占位（Task 3 接 /mailbox/temp） */
+/** 临时邮箱（接 /mailbox/temp：生成/换一个，显示过期时间） */
 function TempMailbox() {
   const { t } = useT()
-  const [temp, setTemp] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const temp = useQuery({ queryKey: ["mailbox", "temp"], queryFn: mailboxApi.getTemp })
 
-  function onGenerate() {
-    setTemp(`temp-${Math.random().toString(36).slice(2, 8)}@temp.${brand.emailDomain}`)
-    toast.success(t("mb.temp.generated"))
-  }
-  function onRefresh() {
-    setTemp(`temp-${Math.random().toString(36).slice(2, 8)}@temp.${brand.emailDomain}`)
-    toast.success(t("mb.temp.refreshed"))
-  }
+  const create = useMutation({
+    mutationFn: mailboxApi.createTemp,
+    onSuccess: () => {
+      toast.success(t("mb.temp.generated"))
+      void qc.invalidateQueries({ queryKey: ["mailbox", "temp"] })
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  const refresh = useMutation({
+    mutationFn: (id: string) => mailboxApi.refreshTemp(id),
+    onSuccess: () => {
+      toast.success(t("mb.temp.refreshed"))
+      void qc.invalidateQueries({ queryKey: ["mailbox", "temp"] })
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
 
   return (
     <Card>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold">{t("mb.temp.title")}</p>
-          <p className="text-xs tabular-nums text-muted-foreground">{t("mb.temp.quota", { used: temp ? 1 : 0, total: 1 })}</p>
+          <p className="text-xs tabular-nums text-muted-foreground">
+            {t("mb.temp.quota", { used: temp.data ? 1 : 0, total: 1 })}
+          </p>
         </div>
-        {!temp ? (
-          <Button onClick={onGenerate}>{t("mb.temp.generate")}</Button>
+        {!temp.data ? (
+          <Button onClick={() => create.mutate()} disabled={create.isPending}>
+            {create.isPending ? t("common.loading") : t("mb.temp.generate")}
+          </Button>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
-            <code className="rounded-md bg-muted px-3 py-1.5 text-sm">{temp}</code>
-            <Button variant="outline" size="sm" onClick={onRefresh}>
+            <code className="rounded-md bg-muted px-3 py-1.5 text-sm">{temp.data.address}</code>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={refresh.isPending}
+              onClick={() => refresh.mutate(temp.data!.id)}
+            >
               <RefreshCw className="size-4" />
               {t("mb.temp.refresh")}
             </Button>
+            <span className="text-xs text-muted-foreground">
+              {t("mb.temp.validUntil", {
+                time: new Date(temp.data.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              })}
+            </span>
           </div>
         )}
         <p className="text-xs text-muted-foreground">{t("mb.temp.desc")}</p>

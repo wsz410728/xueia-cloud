@@ -26,6 +26,12 @@ export interface MailMessage {
   receivedAt: string
 }
 
+export interface TempMailbox {
+  id: string
+  address: string
+  expiresAt: string
+}
+
 export const mailboxApi = {
   /** GET /mailbox —— 邮箱地址列表（含每地址邮件数） */
   listAddresses: () => get<{ addresses: MailboxAddress[] }>("/mailbox"),
@@ -71,4 +77,21 @@ export const mailboxApi = {
   /** POST /mailbox/messages/batch-delete */
   batchDelete: (mailboxId: string, ids: string[]) =>
     post<null>("/mailbox/messages/batch-delete", { mailboxId, ids }),
+
+  /** GET /mailbox/temp —— 当前临时邮箱（无则 null） */
+  getTemp: () => get<TempMailbox | null>("/mailbox/temp"),
+
+  /** POST /mailbox/temp —— 生成临时邮箱（每次调用都换新，旧地址作废） */
+  createTemp: () => post<TempMailbox>("/mailbox/temp"),
+
+  /** POST /mailbox/temp/{id}/refresh —— 换一个（旧地址立即作废） */
+  refreshTemp: (tempId: string) => post<TempMailbox>(`/mailbox/temp/${encodeURIComponent(tempId)}/refresh`),
+
+  /** POST /mailbox/forward-verify —— 第一步：向真实邮箱发送验证码 */
+  sendForwardVerify: (mailboxId: string, email: string) =>
+    post<{ sentTo: string }>("/mailbox/forward-verify", { mailboxId, email }),
+
+  /** POST /mailbox/forward-verify —— 第二步：提交验证码（通过后该地址转为已验证并记为转发目标） */
+  verifyForward: (mailboxId: string, code: string) =>
+    post<null>("/mailbox/forward-verify", { mailboxId, code }),
 }

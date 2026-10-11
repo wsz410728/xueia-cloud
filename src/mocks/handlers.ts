@@ -133,6 +133,25 @@ export const mockMessages: MailMessage[] = [
 
 const LOCAL_RE = /^[a-z0-9._-]{1,20}$/i
 
+/** 临时邮箱（内存态：同一会话只保留一个，换一个即作废旧地址） */
+let mockTemp: { id: string; address: string; expiresAt: string } | null = null
+/** 待验证的转发目标（send → verify 两步） */
+let pendingForward: { mailboxId: string; email: string } | null = null
+
+function newTemp() {
+  const id = Math.random().toString(36).slice(2, 8)
+  return {
+    id,
+    address: `temp-${id}@temp.${brand.emailDomain}`,
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+  }
+}
+
+function maskEmail(email: string) {
+  const [name, domain] = email.split("@")
+  return `${name.slice(0, 1)}***@${domain}`
+}
+
 export const mailboxHandlers = [
   http.get(`${API}/mailbox`, () => {
     if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
@@ -164,6 +183,50 @@ export const mailboxHandlers = [
     return ok(created)
   }),
 
+  // ===== 临时邮箱 =====
+  http.get(`${API}/mailbox/temp`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok(mockTemp)
+  }),
+
+  http.post(`${API}/mailbox/temp`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    mockTemp = newTemp()
+    return ok(mockTemp)
+  }),
+
+  http.post(`${API}/mailbox/temp/:id/refresh`, ({ params }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    if (!mockTemp || mockTemp.id !== params.id) return fail(404, "SYS_NOT_FOUND", "临时邮箱不存在或已作废")
+    mockTemp = newTemp()
+    return ok(mockTemp)
+  }),
+
+  // ===== 转发验证（send → verify 两步，同一路径） =====
+  http.post(`${API}/mailbox/forward-verify`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { mailboxId, email, code } = (await request.json()) as {
+      mailboxId: string
+      email?: string
+      code?: string
+    }
+    const target = mockAddresses.find((a) => a.id === mailboxId)
+    if (!target) return fail(404, "SYS_NOT_FOUND", "地址不存在")
+    if (email) {
+      pendingForward = { mailboxId, email }
+      return ok({ sentTo: maskEmail(email) })
+    }
+    if (code) {
+      if (!pendingForward || pendingForward.mailboxId !== mailboxId || code !== "123456") {
+        return fail(400, "MAILBOX_CODE_INVALID", "验证码错误或已过期")
+      }
+      target.forwardTo = pendingForward.email
+      target.forwardVerified = true
+      pendingForward = null
+      return ok(null)
+    }
+    return fail(400, "SYS_BAD_REQUEST", "参数不完整")
+  }),
   http.post(`${API}/mailbox/:id/update`, async ({ params, request }) => {
     if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
     const target = mockAddresses.find((a) => a.id === params.id)

@@ -420,4 +420,15 @@ export const zh: Record<string, string> = {
   "mb.reply.send": "发送回复",
   "mb.reply.sent": "回复已发送",
   "mb.deleteSelected": "删除所选（{n}）",
+
+  "mb.temp.validUntil": "有效期至 {time}",
+  "mb.verify.send": "发送验证码",
+  "mb.verify.sent": "验证码已发送至 {to}",
+  "mb.verify.code": "验证码",
+  "mb.verify.codePh": "6 位验证码",
+  "mb.verify.submit": "验证",
+  "mb.verify.ok": "邮箱验证成功，转发已生效",
+  "mb.verify.verified": "已验证",
+  "mb.verify.desc": "该邮箱已验证，可用于邮件转发。",
+  "mb.verify.note": "验证码 10 分钟内有效，请勿泄露给他人。",
 }
