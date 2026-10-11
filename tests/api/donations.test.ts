@@ -67,3 +67,23 @@ describe("donationsApi 邀请", () => {
     await expect(donationsApi.claimCode("VX-XXXX-YYYY")).rejects.toMatchObject({ code: "DON_CODE_INVALID" })
   })
 })
+
+describe("donationsApi 兑换码", () => {
+  beforeEach(() => loginAsMockUser())
+
+  it("a normal voucher auto-grants the missing module", async () => {
+    const r = await donationsApi.redeem("VX-AA01-BB01")
+    expect(r.unlocked).toContain("frp")
+    expect(r.skipped.length).toBe(0)
+  })
+
+  it("a pick-permission voucher requires a module selection", async () => {
+    await expect(donationsApi.redeem("VX-SELF-0001")).rejects.toMatchObject({ code: "DON_PICK_MODULE" })
+    const r = await donationsApi.redeem("VX-SELF-0001", "proxy")
+    expect(r.unlocked).toContain("proxy")
+  })
+
+  it("an invalid voucher is rejected", async () => {
+    await expect(donationsApi.redeem("VX-XXXX-YYYY")).rejects.toMatchObject({ code: "DON_CODE_INVALID" })
+  })
+})

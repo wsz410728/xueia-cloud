@@ -685,4 +685,13 @@ export const zh: Record<string, string> = {
   "don.rewards.desc": "好友通过你的邀请码解锁 AI 权限后，这里会记录你获得的订阅奖励。",
   "don.rewards.empty": "还没有好友完成有效邀请。",
   "don.rewards.invited": "成功邀请",
+
+  "don.redeem.title": "兑换码",
+  "don.redeem.desc": "邀请码和兑换码是同一个东西：可以给自己用，也可以开通别人送你的权限。",
+  "don.redeem.ph": "VX-XXXX-XXXX，或别人给你的邀请码",
+  "don.redeem.pick": "自选券：选模块",
+  "don.redeem.submit": "兑换",
+  "don.redeem.hint": "只会补上你还没有的权限，已有的会跳过并提示。别人转送的「自选权限券」，需先选一个模块再兑换。",
+  "don.redeem.ok": "兑换成功，已解锁：{unlocked}",
+  "don.redeem.pickModule": "这是自选券，请先选择要开通的模块",
 }

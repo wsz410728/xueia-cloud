@@ -712,6 +712,29 @@ export const inviteHandlers = [
     return ok({ ok: true, rewarded: 50 })
   }),
 ]
+// ===== 兑换码（批次③）=====
+
+// 已知可用码：VX-AA01-BB01（普通，补 frp）；VX-SELF-0001（自选券，需选模块）
+const NORMAL_VOUCHERS = new Set(["VX-AA01-BB01"])
+const SELF_VOUCHERS = new Set(["VX-SELF-0001"])
+
+export const voucherHandlers = [
+  http.post(`${API}/vouchers/redeem`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { code, moduleKey } = (await request.json()) as { code: string; moduleKey?: string }
+    if (SELF_VOUCHERS.has(code)) {
+      if (!moduleKey) return fail(400, "DON_PICK_MODULE", "自选券需要先选择一个模块")
+      SELF_VOUCHERS.delete(code)
+      if (moduleKey === "ai") session.user.aiUnlocked = true
+      return ok({ unlocked: [moduleKey], skipped: [] })
+    }
+    if (NORMAL_VOUCHERS.has(code)) {
+      NORMAL_VOUCHERS.delete(code)
+      return ok({ unlocked: ["frp"], skipped: [] })
+    }
+    return fail(400, "DON_CODE_INVALID", "兑换码无效或已被使用")
+  }),
+]
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
@@ -723,4 +746,5 @@ export const handlers = [
   ...aiHandlers,
   ...donationHandlers,
   ...inviteHandlers,
+  ...voucherHandlers,
 ]

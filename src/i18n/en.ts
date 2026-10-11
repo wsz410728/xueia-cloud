@@ -665,4 +665,13 @@ export const en: Record<string, string> = {
   "don.rewards.desc": "When a friend unlocks AI access through your code, your subscription reward shows up here.",
   "don.rewards.empty": "No completed invites yet.",
   "don.rewards.invited": "Invited",
+
+  "don.redeem.title": "Redeem a code",
+  "don.redeem.desc": "Invite codes and vouchers are the same thing — use them yourself, or activate a permission someone gifted you.",
+  "don.redeem.ph": "VX-XXXX-XXXX or a code someone sent you",
+  "don.redeem.pick": "Voucher: pick a module",
+  "don.redeem.submit": "Redeem",
+  "don.redeem.hint": "Only missing permissions are granted; existing ones are skipped with a notice. Pick-a-permission vouchers need a module selection first.",
+  "don.redeem.ok": "Redeemed — unlocked: {unlocked}",
+  "don.redeem.pickModule": "This is a pick-a-permission voucher — choose a module first",
 }

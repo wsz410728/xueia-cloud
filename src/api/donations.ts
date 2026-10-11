@@ -46,6 +46,21 @@ export const donationsApi = {
     return post<{ id: string }>("/donations", { type, payload })
   },
 
+  /**
+   * POST /vouchers/redeem —— 用别人的码/自选券。
+   * 自选券（VX-SELF-*）必须选模块 → 否则 DON_PICK_MODULE；普通码自动补缺，已有跳过。
+   */
+  redeem: async (code: string, moduleKey?: DonationTypeKey) => {
+    const c = code.trim().toUpperCase()
+    if (!/^VX-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(c)) {
+      throw new ApiError("DON_CODE_INVALID", "兑换码格式不正确", 0)
+    }
+    if (c.startsWith("VX-SELF-") && !moduleKey) {
+      throw new ApiError("DON_PICK_MODULE", "自选券需要先选择一个模块", 0)
+    }
+    return post<{ unlocked: string[]; skipped: string[] }>("/vouchers/redeem", { code: c, moduleKey })
+  },
+
   /** GET /my-invites —— 我的邀请码 + 邀请奖励记录 */
   listInvites: () =>
     get<{

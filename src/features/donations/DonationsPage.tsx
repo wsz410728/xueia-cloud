@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
 import { InviteSection } from "./InviteSection"
+import { RedeemSection } from "./RedeemSection"
 
 /**
  * 捐献与邀请 —— 对齐参考站实测结构：
@@ -115,6 +116,9 @@ export function DonationsPage() {
               ))}
             </div>
           )}
+
+          {/* 兑换码（用别人的码/自选券） */}
+          <RedeemSection />
 
           {/* 我的捐献记录 */}
           {(donations.data?.records.length ?? 0) > 0 && (

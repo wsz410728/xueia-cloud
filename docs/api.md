@@ -80,6 +80,7 @@
 | `DON_DUPLICATE` | 409 | 同一资源重复提交 |
 | `DON_CODE_INVALID` | 400 | 邀请/兑换码无效或格式不对 |
 | `DON_CLAIM_USED` | 400 | 已完成过补填（仅一次） |
+| `DON_PICK_MODULE` | 400 | 自选权限券未选模块 |
 
 ## 3. 接口登记表
 
@@ -262,6 +263,7 @@
 | `GET /my-invites` | 我的邀请码 + 奖励记录 | 需登录 |
 | `POST /my-invites` | 创建邀请码 | 返回 `VX-XXXX-XXXX` |
 | `POST /my-invites/claim` | 补填邀请码（7 天内一次） | 已用过 → `DON_CLAIM_USED`；无效 → `DON_CODE_INVALID` |
+| `POST /vouchers/redeem` | 兑换码兑换（普通补缺 / 自选券需选模块） | `{code, moduleKey?}`；自选券缺模块 → `DON_PICK_MODULE` |
 
 ### 3.8 其余域（批次 4-6，占位待登记）
 
