@@ -599,4 +599,13 @@ export const zh: Record<string, string> = {
   "ai.goDonate": "前往捐献",
   "ai.featureId": "功能标识",
   "ai.notConfiguredDesc": "管理员还未配置中转站凭据，请稍后再试。",
+
+  "ai.bindEntry": "已有中转站账号？用登录密码绑定解锁",
+  "ai.bindTitle": "完成密码绑定",
+  "ai.bindDesc": "你的中转站账号已就绪，输入本站登录密码完成绑定后即可使用。",
+  "ai.bindPassword": "登录密码",
+  "ai.bindPasswordPh": "输入你登录 Xueia Cloud 时用的那个密码",
+  "ai.bindHint": "系统会验证它，并同步为中转站账号的密码，之后两边共用同一个密码。",
+  "ai.bindSubmit": "绑定并解锁",
+  "ai.bindOk": "绑定完成，AI 中转站已解锁",
 }

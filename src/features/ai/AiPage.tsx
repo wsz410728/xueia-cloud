@@ -1,9 +1,14 @@
-import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { Link } from "react-router"
 import { Bot, Lock } from "lucide-react"
 import { useT } from "@/i18n"
 import { aiApi } from "@/api/ai"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,7 +22,21 @@ import { PageHeader } from "@/components/ui/page-header"
  */
 export function AiPage() {
   const { t } = useT()
+  const qc = useQueryClient()
   const status = useQuery({ queryKey: ["ai", "status"], queryFn: aiApi.getStatus })
+  const [bindOpen, setBindOpen] = useState(false)
+  const [password, setPassword] = useState("")
+
+  const bind = useMutation({
+    mutationFn: () => aiApi.bind(password),
+    onSuccess: () => {
+      toast.success(t("ai.bindOk"))
+      setBindOpen(false)
+      setPassword("")
+      void qc.invalidateQueries({ queryKey: ["ai", "status"] })
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
 
   const locked = status.data && !status.data.unlocked
 
@@ -58,6 +77,15 @@ export function AiPage() {
               )}
             </div>
 
+            {/* 次入口：已有中转站账号时用本站登录密码绑定解锁（原站语义：两边共用同一密码） */}
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              onClick={() => setBindOpen(true)}
+            >
+              {t("ai.bindEntry")}
+            </button>
+
             <p className="mt-2 text-xs text-muted-foreground">
               {t("ai.featureId")}：<code className="rounded bg-muted px-1.5 py-0.5">ai</code>
             </p>
@@ -72,6 +100,34 @@ export function AiPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={bindOpen} onOpenChange={setBindOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("ai.bindTitle")}</DialogTitle>
+            <DialogDescription>{t("ai.bindDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="ai-bind-pw">{t("ai.bindPassword")}</Label>
+            <Input
+              id="ai-bind-pw"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t("ai.bindPasswordPh")}
+            />
+            <p className="text-xs text-muted-foreground">{t("ai.bindHint")}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBindOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button disabled={!password || bind.isPending} onClick={() => bind.mutate()}>
+              {bind.isPending ? t("common.loading") : t("ai.bindSubmit")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

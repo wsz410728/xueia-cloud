@@ -579,4 +579,13 @@ export const en: Record<string, string> = {
   "ai.goDonate": "Go to donate",
   "ai.featureId": "Feature id",
   "ai.notConfiguredDesc": "The gateway credentials aren't configured yet — try again later.",
+
+  "ai.bindEntry": "Already have a gateway account? Bind it with your password",
+  "ai.bindTitle": "Finish password binding",
+  "ai.bindDesc": "Your gateway account is ready — enter your site login password to bind and start using it.",
+  "ai.bindPassword": "Login password",
+  "ai.bindPasswordPh": "The password you sign in with",
+  "ai.bindHint": "It is verified and synced as your gateway password; both sides share it afterwards.",
+  "ai.bindSubmit": "Bind and unlock",
+  "ai.bindOk": "Binding complete — AI Gateway unlocked",
 }

@@ -75,6 +75,7 @@
 | `TB_FILE_TOO_LARGE` | 400 | 单文件超过配置上限（前端前置拦截） |
 | `TB_TOO_MANY_FILES` | 400 | 文件数超过配置上限（前端前置拦截） |
 | `TB_CODE_EXPIRED` | 404 | 接收码不存在或已过期（取件页显示友好过期态） |
+| `AI_PASSWORD_MISMATCH` | 400 | AI 绑定密码与本站登录密码不一致 |
 
 ## 3. 接口登记表
 
@@ -239,6 +240,8 @@
 ### 3.6 AI 中转站 ai（批次③，已实现 mock 🟡）
 
 | `GET /ai/status` | AI 中转站状态门（configured/enabled/unlocked/modelCount/remainingQuota/baseUrl） | 需登录 |
+| `GET /ai/account` | 中转站账号是否已建 | 需登录 |
+| `POST /ai/bind` | 用本站登录密码绑定中转站账号并解锁 | `password`；不匹配 → `AI_PASSWORD_MISMATCH` |
 
 ### 3.7 其余域（批次 4-6，占位待登记）
 

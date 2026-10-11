@@ -553,6 +553,20 @@ export const aiHandlers = [
       baseUrl: unlocked ? "https://ai.xueia.com/v1" : null,
     })
   }),
+  http.get(`${API}/ai/account`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    // mock：中转站账号在本站登录后即存在
+    return ok({ accountExists: true })
+  }),
+
+  http.post(`${API}/ai/bind`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { password } = (await request.json()) as { password: string }
+    // mock：绑定密码 = 本站登录密码（原站语义：两边共用同一密码）
+    if (password !== "password123") return fail(400, "AI_PASSWORD_MISMATCH", "密码与本站登录密码不一致")
+    session.user.aiUnlocked = true
+    return ok({ unlocked: true })
+  }),
 ]
 
 export const handlers = [

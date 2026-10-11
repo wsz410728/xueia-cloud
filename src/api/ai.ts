@@ -1,4 +1,4 @@
-import { get } from "@/lib/api-client"
+import { ApiError, get, post } from "@/lib/api-client"
 
 /**
  * AI 中转站（契约见 docs/api.md §5.2 ai/dev 组；本项目统一 /api/v1 前缀）。
@@ -23,4 +23,16 @@ export interface AiStatus {
 export const aiApi = {
   /** GET /ai/status */
   getStatus: () => get<AiStatus>("/ai/status"),
+
+  /** GET /ai/account —— 中转站账号是否已建（用本站账号登录中转站后即存在） */
+  checkAccount: () => get<{ accountExists: boolean }>("/ai/account"),
+
+  /**
+   * POST /ai/bind —— 用本站登录密码绑定中转站账号并解锁。
+   * 密码即登录密码（原站语义：两边共用同一密码），不匹配 → AI_PASSWORD_MISMATCH。
+   */
+  bind: async (password: string) => {
+    if (!password) throw new ApiError("SYS_BAD_REQUEST", "请输入登录密码", 0)
+    return post<{ unlocked: true }>("/ai/bind", { password })
+  },
 }
