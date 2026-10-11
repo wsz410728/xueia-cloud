@@ -33,6 +33,7 @@
 - **目标**：从零复刻 cloud.doulor.cn（Doulor Cloud，共建式私域云平台）的**前端**，品牌替换为用户自己的 **Xueia（域名 xueia.com）**，最终目标是**真实运营**（API 层按真实端点定型，后端可后补）。
 - **状态**：设计已定稿并经用户确认，**尚未脚手架化**（无 package.json）。
 - **进度日志**（每完成一项追加一行，倒序）：
+  - 2026-10-11 修复两个实测暴露的 bug：**PWA SW 与 MSW 抢 scope**（dev 不注册 PWA SW + 启动清理遗留，教训入 §7.2）；**占位页 i18n key 双前缀**（`nav.nav.gallery`）。首次打开创想造物占位页并验收。
   - 2026-10-11 用户拍板：侧栏改参考站同款**平铺布局 + 底部用户块**（已重构并实测同构）；**新增「创想造物」模块**（造物集，批次④，替代未纳入的 AI实验室生态位）；顶栏加积分 chip。三份文档同步。原站「AI实验室」确认不纳入。
   - 2026-10-11 对比验收轮：登录参考站实测（账号 jooyang），同口径提取结构+计算样式。**发现并修复重大 bug：main.tsx 漏 import index.css，全站此前为无样式渲染**。深色令牌对齐参考站（底 #1a1a1a、卡片同底色+白 15% 边框、圆角 6px）、概览标题逐字动画。另发现参考站新增模块「AI实验室(/dashboard/lab)」「创想造物(/dashboard/gallery)」未入范围，待用户决策。
   - 2026-10-11 **批次①完成并推送**：脚手架（Vite7+React19+TS strict+Tailwind v4+RR v7+Query v5+RHF/zod+MSW+Vitest）、设计系统（15 组件+令牌+云朵背景+玻璃拟态+角色环）、品牌配置（emailDomain 可配）、i18n zh/en、落地页九卡、认证三页（登录含 2FA 三方式+环境自检）、控制台外壳（守卫+玻璃侧栏+双铃铛）、概览页、邮箱收件箱 mock 页（加料演示）、全量占位路由、PWA（manifest+SW+favicon）、chunk 自愈。构建通过（首屏 gzip≈190KB）；WSL vitest 10/10 通过；浏览器实测登录→2FA→概览→邮箱全链路。修复两处契约 bug：/me 401 误触发登录跳转；AUTH_2FA_REQUIRED 被改写为 AUTH_REQUIRED 导致票据丢失（ApiError 现携带 data，契约见 docs/api.md）。
@@ -183,10 +184,12 @@ src/
 - **测试在 WSL 环境**：Vitest / Playwright 一律在 WSL Ubuntu 里跑（见 §8 命令），不在 Windows 侧跑测试。
 - **每次更新代码后必须同步到 GitHub**：`git commit` + `git push origin main`（仓库 `wsz410728/xueia-cloud`，gh 已设备码登录、凭据走 keyring）。不允许攒批——一个功能点一推。
 
-### 7.2 环境状态（2026-10-07 更新）
+### 7.2 环境状态（2026-10-11 更新）
 
-- **Windows 本机**：git 2.55 + gh 2.102（已登录 wsz410728）+ Node.js LTS 22 已装（winget）。**系统 shell 是 cmd**：`grep`/`sed`/`head`/`wc`/`find` 等 Unix 工具**不存在**，管道 `|`、`&&` 后半段可能被静默截断。复杂文本处理用 PowerShell（`Select-String`、正则 Matches），或写成 `.ps1` 脚本文件再 `powershell -ExecutionPolicy Bypass -File` 执行。
-- **WSL Ubuntu 26.04**：git 已有；Node 22 经 NodeSource 安装。注意：`/mnt/d` 下的项目目录跨平台共享，`node_modules` 中的原生二进制按平台区分——依赖安装策略见 §8（双平台二进制以显式 devDeps 方式共存）。
+- **Windows 本机**：git 2.55 + gh 2.102（已登录 wsz410728）+ Node.js v24 已装（winget）。**系统 shell 是 cmd**：`grep`/`sed`/`head`/`wc`/`find` 等 Unix 工具**不存在**，管道 `|`、`&&` 后半段可能被静默截断。复杂文本处理用 PowerShell（`Select-String`、正则 Matches），或写成 `.ps1` 脚本文件再 `powershell -ExecutionPolicy Bypass -File` 执行（注意：路径用正斜杠 `D:/...`，反斜杠会被 shell 吃掉）。
+- **WSL Ubuntu 26.04**：git + Node v22（NodeSource）。
+- **mock 会话特性（预期行为，勿当 bug）**：MSW 会话存在 worker 内存里，**SPA 内部导航（Link 点击）会话保持；整页跳转/刷新（goto/reload）会重置回未登录**。验收或 E2E 走全链路时用 SPA 导航。
+- **PWA SW 与 MSW 冲突（已修，2026-10-11）**：`/sw.js` 与 `/mockServiceWorker.js` 同 scope `/`，两个 SW 只能一个生效——**PWA SW 仅生产环境注册**（main.tsx `registerServiceWorker`），dev 启动时主动清掉遗留注册，否则 MSW 被挤掉、API 全 404。
 - `doulor-analysis/` 是分析产物不是项目代码：不要在其中开发，已被 `.gitignore` 排除出公开仓库。
 - 变更前必读：`docs/superpowers/specs/2026-10-07-xueia-cloud-frontend-design.md`（设计文档，一切实现以它为准）、`docs/api.md`（接口登记册，写接口代码前先查）。
 

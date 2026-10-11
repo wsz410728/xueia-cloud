@@ -12,11 +12,24 @@ import { watchSystemTheme } from "@/lib/theme"
 async function enableMocking() {
   if (!import.meta.env.DEV) return
   const { worker } = await import("@/mocks/browser")
+  // 开发态：先清掉可能已注册的 PWA SW（历史遗留注册会挤占 MSW 的 scope）
+  const regs = await navigator.serviceWorker?.getRegistrations?.() ?? []
+  for (const r of regs) await r.unregister()
   await worker.start({ onUnhandledRequest: "bypass" })
+}
+
+/** 生产环境注册 PWA SW（dev 态由 MSW worker 独占 scope，见 enableMocking） */
+function registerServiceWorker() {
+  if (import.meta.env.PROD && "serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {})
+    })
+  }
 }
 
 async function bootstrap() {
   watchSystemTheme()
+  registerServiceWorker()
   await enableMocking()
 
   const queryClient = new QueryClient({

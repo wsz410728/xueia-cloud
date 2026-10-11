@@ -70,11 +70,8 @@
     </div>
     <div id="root"></div>
     <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker.register("/sw.js").catch(function () {})
-        })
-      }
+      // PWA Service Worker 的注册已移到 src/main.tsx：
+      // 生产环境才注册（开发态 MSW 需要独占 SW scope，两者同 scope 会互相挤掉）。
     </script>
     <script>
       setTimeout(function () {
