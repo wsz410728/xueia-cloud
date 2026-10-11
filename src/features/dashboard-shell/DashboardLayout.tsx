@@ -15,8 +15,7 @@ import {
   Moon,
   Network,
   Package,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Settings,
   Sparkles,
   Sun,
   Users,
@@ -80,28 +79,26 @@ const NAV_FOOTER: Array<{ to: string; key: string }> = [
   { to: "/dashboard/settings", key: "nav.settings" },
 ]
 
-function NavItem({ to, icon: Icon, label, collapsed }: { to: string; icon: React.ElementType; label: string; collapsed: boolean }) {
+function NavItem({ to, icon: Icon, label }: { to: string; icon: React.ElementType; label: string }) {
   return (
     <NavLink
       to={to}
       end={to === "/dashboard"}
-      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
           "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          collapsed && "justify-center px-2",
           isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         )
       }
     >
       <Icon className="size-4 shrink-0" />
-      {!collapsed && <span className="truncate">{label}</span>}
+      <span className="truncate">{label}</span>
     </NavLink>
   )
 }
 
-/** 底部用户块（参考站同款：头像角色环 + 用户名 + 邮箱 + 账户菜单） */
-function UserBlock({ collapsed }: { collapsed: boolean }) {
+/** 底部用户块（参考站同款：头像角色环 + 昵称 + 邮箱 + 账户菜单） */
+function UserBlock() {
   const { t } = useT()
   const { data: user } = useMe()
   const clearMe = useClearMe()
@@ -116,48 +113,17 @@ function UserBlock({ collapsed }: { collapsed: boolean }) {
     }
   }
 
-  if (collapsed) {
-    return (
-      <div className="flex justify-center border-t p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn("rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring", user.role === "admin" && "role-ring role-ring-admin", user.role === "super" && "role-ring role-ring-super")}
-              aria-label="account"
-            >
-              <Avatar className="size-9">
-                <AvatarFallback>{(user.nickname ?? user.username).slice(0, 2)}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52">
-            <DropdownMenuLabel>
-              <p className="font-medium">{user.nickname ?? user.username}</p>
-              <p className="text-xs font-normal text-muted-foreground">{user.email}</p>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link to="/dashboard/settings">{t("nav.settings")}</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link to={`/u/${user.username}`}>{t("nav.space")}</Link></DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout}><LogOut className="size-4" />{t("nav.logout")}</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    )
-  }
-
   return (
     <div className="flex items-center gap-2.5 border-t p-3">
-      <button
-        type="button"
+      <Link
+        to={`/u/${user.username}`}
         className={cn("shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring", user.role === "admin" && "role-ring role-ring-admin", user.role === "super" && "role-ring role-ring-super")}
-        aria-label="account"
+        aria-label={t("nav.space")}
       >
         <Avatar className="size-9">
           <AvatarFallback>{(user.nickname ?? user.username).slice(0, 2)}</AvatarFallback>
         </Avatar>
-      </button>
+      </Link>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{user.nickname ?? user.username}</p>
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
@@ -165,7 +131,7 @@ function UserBlock({ collapsed }: { collapsed: boolean }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" aria-label={t("nav.settings")}>
-            <Menu className="size-4" />
+            <Settings className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
@@ -179,53 +145,37 @@ function UserBlock({ collapsed }: { collapsed: boolean }) {
   )
 }
 
-/** 玻璃拟态侧栏：平铺主导航 + 底部独立项 + 用户块（可折叠 + 移动端抽屉） */
-function Sidebar({ collapsed }: { collapsed: boolean }) {
+/** 玻璃拟态侧栏：固定 240px 宽，对齐参考站（参考站侧栏无折叠功能） */
+function Sidebar() {
   const { t } = useT()
   return (
-    <aside
-      className={cn(
-        "glass-sidebar sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] md:flex",
-        collapsed ? "w-16" : "w-60"
-      )}
-    >
+    <aside className="glass-sidebar sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r md:flex">
       <Link to="/" className="flex h-14 items-center gap-2 border-b px-4 font-bold">
         <Cloud className="size-6 shrink-0" />
-        {!collapsed && <span className="truncate">{brand.name}</span>}
+        <span className="truncate">{brand.name}</span>
       </Link>
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {NAV_MAIN.map((item) => (
-          <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} collapsed={collapsed} />
+          <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} />
         ))}
       </nav>
       <div className="space-y-1 border-t p-3">
-        {NAV_FOOTER.map((item) =>
-          collapsed ? (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              title={t(item.key)}
-              className="flex justify-center rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              {t(item.key).slice(0, 1)}
-            </NavLink>
-          ) : (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )
-              }
-            >
-              <span className="truncate">{t(item.key)}</span>
-            </NavLink>
-          )
-        )}
+        {NAV_FOOTER.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center rounded-md px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              )
+            }
+          >
+            <span className="truncate">{t(item.key)}</span>
+          </NavLink>
+        ))}
       </div>
-      <UserBlock collapsed={collapsed} />
+      <UserBlock />
     </aside>
   )
 }
@@ -352,24 +302,14 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
   )
 }
 
-/** 控制台布局：侧栏 + 顶栏 + 移动端抽屉 + Outlet */
+/** 控制台布局：固定侧栏 + 顶栏 + 移动端抽屉 + Outlet */
 export function DashboardLayout() {
-  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t } = useT()
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar collapsed={collapsed} />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-16 left-1 z-40 hidden rounded-full border bg-card md:inline-flex"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-label="toggle sidebar"
-      >
-        {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-      </Button>
+      <Sidebar />
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
@@ -386,7 +326,7 @@ export function DashboardLayout() {
             </div>
             <nav className="flex-1 space-y-1 overflow-y-auto p-3">
               {NAV_MAIN.map((item) => (
-                <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} collapsed={false} />
+                <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.key)} />
               ))}
             </nav>
             <div className="space-y-1 border-t p-3">
@@ -400,7 +340,7 @@ export function DashboardLayout() {
                 </NavLink>
               ))}
             </div>
-            <UserBlock collapsed={false} />
+            <UserBlock />
           </div>
         </div>
       )}
