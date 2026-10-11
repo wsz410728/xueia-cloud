@@ -209,12 +209,89 @@ function TempMailbox() {
   )
 }
 
+/** 邮件详情 + 回复对话框（getMessage 含正文） */
+function MessageDetailDialog({
+  mailboxId,
+  messageId,
+  onOpenChange,
+}: {
+  mailboxId: string
+  messageId: string | null
+  onOpenChange: () => void
+}) {
+  const { t } = useT()
+  const [replyText, setReplyText] = useState("")
+
+  const detail = useQuery({
+    queryKey: ["mailbox", "message", mailboxId, messageId],
+    queryFn: () => mailboxApi.getMessage(mailboxId, messageId as string),
+    enabled: !!messageId,
+  })
+
+  const reply = useMutation({
+    mutationFn: () => mailboxApi.reply(mailboxId, messageId as string, replyText),
+    onSuccess: () => {
+      toast.success(t("mb.reply.sent"))
+      setReplyText("")
+      onOpenChange()
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  return (
+    <Dialog open={!!messageId} onOpenChange={(v) => !v && onOpenChange()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="truncate pr-6">
+            {detail.data?.subject ?? t("mb.noSubject")}
+          </DialogTitle>
+          <DialogDescription className="flex flex-wrap gap-2">
+            <span>{detail.data?.from}</span>
+            {detail.data && <span>· {new Date(detail.data.receivedAt).toLocaleString()}</span>}
+          </DialogDescription>
+        </DialogHeader>
+        {detail.isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : (
+          <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap text-foreground">
+            {detail.data?.body}
+          </p>
+        )}
+        <div className="space-y-2 border-t pt-3">
+          <Label htmlFor="mb-reply">{t("mb.reply.label")}</Label>
+          <textarea
+            id="mb-reply"
+            className="min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            placeholder={t("mb.reply.ph")}
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+          />
+          <Button size="sm" disabled={!replyText.trim() || reply.isPending} onClick={() => reply.mutate()}>
+            {reply.isPending ? t("common.loading") : t("mb.reply.send")}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function MailboxPage() {
   const { t } = useT()
   const qc = useQueryClient()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [settingsFor, setSettingsFor] = useState<MailboxAddress | null>(null)
+  const [detailFor, setDetailFor] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  function toggleSelect(id: string) {
+    setSelected((s) => {
+      const next = new Set(s)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const addresses = useQuery({
     queryKey: ["mailbox", "addresses"],
@@ -238,6 +315,27 @@ export function MailboxPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   })
+
+  const batchDelete = useMutation({
+    mutationFn: () => mailboxApi.batchDelete(mailboxId as string, [...selected]),
+    onSuccess: () => {
+      toast.success(t("common.success"))
+      setSelected(new Set())
+      void qc.invalidateQueries({ queryKey: ["mailbox"] })
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  const openDetail = (id: string) => {
+    setDetailFor(id)
+    // 打开即视为已读
+    const m = messages.data?.messages.find((x) => x.id === id)
+    if (m && !m.read) {
+      void mailboxApi.markRead(mailboxId as string, id).then(() =>
+        qc.invalidateQueries({ queryKey: ["mailbox", "messages", mailboxId] })
+      )
+    }
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -308,6 +406,11 @@ export function MailboxPage() {
             <p className="text-sm font-semibold">{t("mb.inbox")}</p>
             <div className="flex items-center gap-2">
               {active && <p className="text-xs text-muted-foreground">{active.address}</p>}
+              {selected.size > 0 && (
+                <Button variant="destructive" size="sm" disabled={batchDelete.isPending} onClick={() => batchDelete.mutate()}>
+                  {t("mb.deleteSelected", { n: selected.size })}
+                </Button>
+              )}
               {(messages.data?.messages.some((m) => !m.read)) && (
                 <Button variant="outline" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
                   {t("mb.markAllRead")}
@@ -329,11 +432,18 @@ export function MailboxPage() {
             <ul className="divide-y">
               {messages.data?.messages.map((m) => (
                 <li key={m.id} className={cn("flex items-start gap-3 py-3", !m.read && "font-medium")}>
-                  <div className="min-w-0 flex-1">
+                  <input
+                    type="checkbox"
+                    aria-label={`${t("common.delete")} ${m.subject ?? ""}`}
+                    className="mt-1 accent-[var(--color-primary)]"
+                    checked={selected.has(m.id)}
+                    onChange={() => toggleSelect(m.id)}
+                  />
+                  <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openDetail(m.id)}>
                     <p className="truncate text-sm">{m.subject ?? t("mb.noSubject")}</p>
                     <p className="mt-0.5 truncate text-xs font-normal text-muted-foreground">{m.excerpt}</p>
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">{m.from}</span>
+                  </button>
+                  <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">{m.from}</span>
                   <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">{timeAgo(m.receivedAt, t)}</span>
                 </li>
               ))}
@@ -344,6 +454,9 @@ export function MailboxPage() {
 
       <AddAddressDialog open={addOpen} onOpenChange={setAddOpen} />
       <AddressSettingsDialog address={settingsFor} onOpenChange={() => setSettingsFor(null)} />
+      {mailboxId && (
+        <MessageDetailDialog mailboxId={mailboxId} messageId={detailFor} onOpenChange={() => setDetailFor(null)} />
+      )}
     </div>
   )
 }

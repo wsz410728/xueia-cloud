@@ -394,4 +394,10 @@ export const en: Record<string, string> = {
   "mb.addr.deleteConfirm": "All mail to this address will be lost.",
   "mb.addr.deleted": "Address deleted",
   "mb.addr.createdAt": "Created",
+
+  "mb.reply.label": "Reply",
+  "mb.reply.ph": "Write your reply…",
+  "mb.reply.send": "Send reply",
+  "mb.reply.sent": "Reply sent",
+  "mb.deleteSelected": "Delete selected ({n})",
 }

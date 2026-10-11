@@ -124,11 +124,11 @@ export const mockAddresses: MailboxAddress[] = [
 ]
 
 export const mockMessages: MailMessage[] = [
-  { id: "m-1", mailboxId: "mb-1", from: "noreply@github.com", subject: "[GitHub] 你的验证码是 246810", excerpt: "有人在 GitHub 上用它注册了账号，验证码 10 分钟内有效……", read: false, receivedAt: new Date(Date.now() - 6 * 60000).toISOString() },
-  { id: "m-2", mailboxId: "mb-1", from: "team@vercel.com", subject: "Welcome to Vercel", excerpt: "感谢注册！这是你的入门指南……", read: false, receivedAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString() },
-  { id: "m-3", mailboxId: "mb-1", from: "no-reply@telegram.org", subject: "Telegram login code", excerpt: "Login code: 55213. Do not give this code to anyone!", read: true, receivedAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString() },
-  { id: "m-4", mailboxId: "mb-1", from: "hello@xueia.com", subject: "欢迎来到 Xueia Cloud", excerpt: "你的域名邮箱已开通：yanxi@xueia.com……", read: true, receivedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() },
-  { id: "m-5", mailboxId: "mb-2", from: "news@example.dev", subject: "Weekly digest #42", excerpt: "本周开发者周刊……", read: false, receivedAt: new Date(Date.now() - 50 * 3600 * 1000).toISOString() },
+  { id: "m-1", mailboxId: "mb-1", from: "noreply@github.com", subject: "[GitHub] 你的验证码是 246810", excerpt: "有人在 GitHub 上用它注册了账号，验证码 10 分钟内有效……", body: "有人在 GitHub 上用它注册了账号。\n\n验证码：246810\n\n验证码 10 分钟内有效，请勿泄露给他人。\n\n—— GitHub 团队", read: false, receivedAt: new Date(Date.now() - 6 * 60000).toISOString() },
+  { id: "m-2", mailboxId: "mb-1", from: "team@vercel.com", subject: "Welcome to Vercel", excerpt: "感谢注册！这是你的入门指南……", body: "感谢注册！\n\n这是你的入门指南：\n1. 绑定自定义域名\n2. 部署第一个项目\n3. 邀请团队成员\n\n—— Vercel 团队", read: false, receivedAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString() },
+  { id: "m-3", mailboxId: "mb-1", from: "no-reply@telegram.org", subject: "Telegram login code", excerpt: "Login code: 55213. Do not give this code to anyone!", body: "Login code: 55213\n\nDo not give this code to anyone, even if they say they are from Telegram!", read: true, receivedAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString() },
+  { id: "m-4", mailboxId: "mb-1", from: "hello@xueia.com", subject: "欢迎来到 Xueia Cloud", excerpt: "你的域名邮箱已开通：yanxi@xueia.com……", body: "欢迎来到 Xueia Cloud！\n\n你的域名邮箱已开通：yanxi@xueia.com\n\n- 收到的邮件会出现在收件箱\n- 可在「设置」里配置转发到常用邮箱\n\n—— Xueia Cloud 团队", read: true, receivedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() },
+  { id: "m-5", mailboxId: "mb-2", from: "news@example.dev", subject: "Weekly digest #42", excerpt: "本周开发者周刊……", body: "本周开发者周刊 #42\n\n1. 生态动态\n2. 精选文章\n3. 工具推荐", read: false, receivedAt: new Date(Date.now() - 50 * 3600 * 1000).toISOString() },
 ]
 
 const LOCAL_RE = /^[a-z0-9._-]{1,20}$/i
@@ -190,7 +190,33 @@ export const mailboxHandlers = [
     return ok({ messages: mockMessages.filter((m) => m.mailboxId === id) })
   }),
 
-  http.post(`${API}/mailbox/:id/messages/:mid/read`, ({ params }) => {
+  http.get(`${API}/mailbox/:id/messages/:mid`, ({ params }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const m = mockMessages.find(
+      (x) => x.mailboxId === params.id && x.id === params.mid
+    )
+    if (!m) return fail(404, "SYS_NOT_FOUND", "邮件不存在")
+    return ok(m)
+  }),
+
+  http.post(`${API}/mailbox/:id/messages/:mid/reply`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { body } = (await request.json()) as { body: string }
+    if (!body?.trim()) return fail(400, "SYS_BAD_REQUEST", "回复内容不能为空")
+    return ok(null)
+  }),
+
+  http.post(`${API}/mailbox/messages/batch-delete`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { mailboxId, ids } = (await request.json()) as { mailboxId: string; ids: string[] }
+    for (let i = mockMessages.length - 1; i >= 0; i--) {
+      const m = mockMessages[i]
+      if (m.mailboxId === mailboxId && ids.includes(m.id)) mockMessages.splice(i, 1)
+    }
+    return ok(null)
+  }),
+
+  http.post(`${API}/mailbox/:id/messages/:mid/read`, ({ params }) => { // eslint-disable-line
     const m = mockMessages.find((x) => x.id === params.mid)
     if (m) m.read = true
     return ok(null)

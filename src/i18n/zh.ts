@@ -414,4 +414,10 @@ export const zh: Record<string, string> = {
   "mb.addr.deleteConfirm": "删除后该地址的所有邮件将无法找回。",
   "mb.addr.deleted": "地址已删除",
   "mb.addr.createdAt": "创建于",
+
+  "mb.reply.label": "回复",
+  "mb.reply.ph": "写下回复内容…",
+  "mb.reply.send": "发送回复",
+  "mb.reply.sent": "回复已发送",
+  "mb.deleteSelected": "删除所选（{n}）",
 }

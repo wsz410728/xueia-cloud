@@ -18,8 +18,10 @@ export interface MailMessage {
   mailboxId: string
   from: string
   subject: string | null
-  /** 纯文本摘要 */
+  /** 纯文本摘要（列表用） */
   excerpt: string
+  /** 纯文本正文（详情接口返回；列表可省略为空串） */
+  body: string
   read: boolean
   receivedAt: string
 }
@@ -52,4 +54,21 @@ export const mailboxApi = {
 
   /** POST /mailbox/read-all */
   readAll: (mailboxId: string) => post<null>("/mailbox/read-all", { mailboxId }),
+
+  /** GET /mailbox/{id}/messages/{mid} —— 单封详情（含正文） */
+  getMessage: (mailboxId: string, messageId: string) =>
+    get<MailMessage>(
+      `/mailbox/${encodeURIComponent(mailboxId)}/messages/${encodeURIComponent(messageId)}`
+    ),
+
+  /** POST /mailbox/{id}/messages/{mid}/reply */
+  reply: (mailboxId: string, messageId: string, body: string) =>
+    post<null>(
+      `/mailbox/${encodeURIComponent(mailboxId)}/messages/${encodeURIComponent(messageId)}/reply`,
+      { body }
+    ),
+
+  /** POST /mailbox/messages/batch-delete */
+  batchDelete: (mailboxId: string, ids: string[]) =>
+    post<null>("/mailbox/messages/batch-delete", { mailboxId, ids }),
 }
