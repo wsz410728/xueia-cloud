@@ -39,3 +39,31 @@ describe("donationsApi", () => {
     })
   })
 })
+
+describe("donationsApi 邀请", () => {
+  beforeEach(() => loginAsMockUser())
+
+  it("lists invites and rewards (empty by default)", async () => {
+    const r = await donationsApi.listInvites()
+    expect(Array.isArray(r.codes)).toBe(true)
+    expect(Array.isArray(r.rewards)).toBe(true)
+  })
+
+  it("creates an invite code in VX-XXXX-XXXX shape", async () => {
+    const c = await donationsApi.createInvite()
+    expect(c.code).toMatch(/^VX-[A-Z0-9]{4}-[A-Z0-9]{4}$/)
+    const r = await donationsApi.listInvites()
+    expect(r.codes.some((x) => x.code === c.code)).toBe(true)
+  })
+
+  it("claims a valid invite code once", async () => {
+    const c = await donationsApi.createInvite()
+    await expect(donationsApi.claimCode(c.code)).resolves.toMatchObject({ ok: true })
+    // 第二次补填同一码 → 已用
+    await expect(donationsApi.claimCode(c.code)).rejects.toMatchObject({ code: "DON_CLAIM_USED" })
+  })
+
+  it("rejects an unknown code", async () => {
+    await expect(donationsApi.claimCode("VX-XXXX-YYYY")).rejects.toMatchObject({ code: "DON_CODE_INVALID" })
+  })
+})

@@ -46,6 +46,27 @@ export const donationsApi = {
     return post<{ id: string }>("/donations", { type, payload })
   },
 
+  /** GET /my-invites —— 我的邀请码 + 邀请奖励记录 */
+  listInvites: () =>
+    get<{
+      codes: Array<{ code: string; uses: number; max: number; createdAt: string }>
+      rewards: Array<{ invited: string; subscription: string; daily: string; at: string }>
+    }>("/my-invites"),
+
+  /** POST /my-invites —— 创建邀请码（形如 VX-XXXX-XXXX） */
+  createInvite: () => post<{ code: string }>("/my-invites"),
+
+  /**
+   * POST /my-invites/claim —— 补填邀请码（注册后 7 天内一次）。
+   * 已补填过 → DON_CLAIM_USED；无效码 → DON_CODE_INVALID。
+   */
+  claimCode: async (code: string) => {
+    if (!/^VX-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(code.trim())) {
+      throw new ApiError("DON_CODE_INVALID", "邀请码格式不正确", 0)
+    }
+    return post<{ ok: true; rewarded?: number }>("/my-invites/claim", { code: code.trim().toUpperCase() })
+  },
+
   /** POST /donations/cancel —— 撤回待审核申请 */
   cancel: (id: string) => post<null>(`/donations/${encodeURIComponent(id)}/cancel`),
 }

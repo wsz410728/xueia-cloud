@@ -78,6 +78,8 @@
 | `AI_PASSWORD_MISMATCH` | 400 | AI 绑定密码与本站登录密码不一致 |
 | `DON_FORMAT_INVALID` | 400 | 捐献 payload 格式不合规（前端同规则前置校验） |
 | `DON_DUPLICATE` | 409 | 同一资源重复提交 |
+| `DON_CODE_INVALID` | 400 | 邀请/兑换码无效或格式不对 |
+| `DON_CLAIM_USED` | 400 | 已完成过补填（仅一次） |
 
 ## 3. 接口登记表
 
@@ -257,6 +259,9 @@
 | `GET /donations` | 资源类型（含解锁态）+ 我的捐献记录 | 需登录 |
 | `POST /donations` | 提交贡献 | `{type: "ai"\|"frp"\|"proxy", payload}`；格式错 `DON_FORMAT_INVALID`、重复 `DON_DUPLICATE` |
 | `POST /donations/{id}/cancel` | 撤回待审核申请 | 仅 pending 可撤回 |
+| `GET /my-invites` | 我的邀请码 + 奖励记录 | 需登录 |
+| `POST /my-invites` | 创建邀请码 | 返回 `VX-XXXX-XXXX` |
+| `POST /my-invites/claim` | 补填邀请码（7 天内一次） | 已用过 → `DON_CLAIM_USED`；无效 → `DON_CODE_INVALID` |
 
 ### 3.8 其余域（批次 4-6，占位待登记）
 

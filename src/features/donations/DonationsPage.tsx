@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
+import { InviteSection } from "./InviteSection"
 
 /**
  * 捐献与邀请 —— 对齐参考站实测结构：
@@ -147,12 +148,7 @@ export function DonationsPage() {
           )}
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            {/* Task 5 挂邀请分区 */}
-            {t("ph.desc")}
-          </CardContent>
-        </Card>
+        <InviteSection />
       )}
 
       {/* 贡献对话框（按类型出表单） */}

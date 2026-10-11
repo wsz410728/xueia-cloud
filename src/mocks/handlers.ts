@@ -678,6 +678,40 @@ export const donationHandlers = [
     return ok(null)
   }),
 ]
+// ===== 邀请（批次③）=====
+
+const mockInvites: Array<{ code: string; uses: number; max: number; createdAt: string }> = []
+let mockClaimed = false
+
+function newInviteCode() {
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  const seg = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * 32)]).join("")
+  return `VX-${seg()}-${seg()}`
+}
+
+export const inviteHandlers = [
+  http.get(`${API}/my-invites`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({ codes: mockInvites, rewards: [] })
+  }),
+
+  http.post(`${API}/my-invites`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const code = newInviteCode()
+    mockInvites.push({ code, uses: 0, max: 5, createdAt: new Date().toISOString() })
+    return ok({ code })
+  }),
+
+  http.post(`${API}/my-invites/claim`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { code } = (await request.json()) as { code: string }
+    const known = mockInvites.find((c) => c.code === code)
+    if (!known) return fail(400, "DON_CODE_INVALID", "邀请码无效")
+    if (mockClaimed) return fail(400, "DON_CLAIM_USED", "你已经补填过邀请码了")
+    mockClaimed = true
+    return ok({ ok: true, rewarded: 50 })
+  }),
+]
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
@@ -688,4 +722,5 @@ export const handlers = [
   ...appealHandlers,
   ...aiHandlers,
   ...donationHandlers,
+  ...inviteHandlers,
 ]
