@@ -335,7 +335,6 @@ export const zh: Record<string, string> = {
   "pt.buy": "兑换",
 
   // 各模块副标题（副标题用于 SectionPlaceholder 页头；文案自写）
-  "tb.subtitle": "即传即取，过期自动消失。",
   "ai.subtitle": "统一的大模型 API 入口，开箱即用。",
   "frp.subtitle": "把本机服务安全地暴露到公网。",
   "px.subtitle": "订阅链接与节点浏览。",

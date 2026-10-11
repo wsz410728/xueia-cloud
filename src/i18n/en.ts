@@ -315,7 +315,6 @@ export const en: Record<string, string> = {
   "pt.notEnough": "Not enough",
   "pt.buy": "Redeem",
 
-  "tb.subtitle": "Share and pick up, auto-expires.",
   "ai.subtitle": "One unified LLM API endpoint, ready to use.",
   "frp.subtitle": "Expose local services to the public safely.",
   "px.subtitle": "Subscriptions and node browsing.",
