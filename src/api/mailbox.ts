@@ -1,6 +1,6 @@
 import { get, post } from "@/lib/api-client"
 
-/** 邮箱域（路径见 docs/api.md §3.2，批次 ②） */
+/** 邮箱域（路径见 docs/api.md §3.2，批次②） */
 
 export interface MailboxAddress {
   id: string
@@ -8,6 +8,8 @@ export interface MailboxAddress {
   /** 转发目标（真实邮箱） */
   forwardTo: string | null
   forwardVerified: boolean
+  /** 该地址下的邮件数（列表接口计算返回） */
+  messageCount: number
   createdAt: string
 }
 
@@ -16,15 +18,29 @@ export interface MailMessage {
   mailboxId: string
   from: string
   subject: string | null
-  /** 纯文本摘要（渲染正文属批次②完整版） */
+  /** 纯文本摘要 */
   excerpt: string
   read: boolean
   receivedAt: string
 }
 
 export const mailboxApi = {
-  /** GET /mailbox —— 邮箱地址列表 */
+  /** GET /mailbox —— 邮箱地址列表（含每地址邮件数） */
   listAddresses: () => get<{ addresses: MailboxAddress[] }>("/mailbox"),
+
+  /** POST /mailbox —— 新增地址（local part，落库时拼品牌邮箱后缀） */
+  addAddress: (local: string) => post<MailboxAddress>("/mailbox", { local }),
+
+  /**
+   * POST /mailbox/{id}/update —— 修改转发目标。
+   * 注意：只接受 forwardTo；改动后 forwardVerified 由服务端重置为 false，
+   * 验证只能走 /mailbox/forward-verify（Task 3）。
+   */
+  updateAddress: (id: string, patch: { forwardTo: string | null }) =>
+    post<MailboxAddress>(`/mailbox/${encodeURIComponent(id)}/update`, patch),
+
+  /** POST /mailbox/{id}/delete */
+  deleteAddress: (id: string) => post<null>(`/mailbox/${encodeURIComponent(id)}/delete`),
 
   /** GET /mailbox/{id} —— 某邮箱的消息列表 */
   listMessages: (mailboxId: string) =>
@@ -35,5 +51,5 @@ export const mailboxApi = {
     post<null>(`/mailbox/${encodeURIComponent(mailboxId)}/messages/${encodeURIComponent(messageId)}/read`),
 
   /** POST /mailbox/read-all */
-  readAll: (mailboxId: string) => post<null>(`/mailbox/read-all`, { mailboxId }),
+  readAll: (mailboxId: string) => post<null>("/mailbox/read-all", { mailboxId }),
 }

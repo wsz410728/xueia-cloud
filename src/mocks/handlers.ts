@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw"
+import { brand } from "@/config/brand"
 import type { MailMessage, MailboxAddress } from "@/api/mailbox"
 import type { UserSummary } from "@/api/types"
 
@@ -118,8 +119,8 @@ export const authHandlers = [
 // ===== 邮箱域 =====
 
 export const mockAddresses: MailboxAddress[] = [
-  { id: "mb-1", address: "yanxi@xueia.com", forwardTo: "wsz853890575@163.com", forwardVerified: true, createdAt: "2026-10-01T08:00:00Z" },
-  { id: "mb-2", address: "noreply@xueia.com", forwardTo: null, forwardVerified: false, createdAt: "2026-10-05T12:30:00Z" },
+  { id: "mb-1", address: "yanxi@xueia.com", forwardTo: "wsz853890575@163.com", forwardVerified: true, messageCount: 4, createdAt: "2026-10-01T08:00:00Z" },
+  { id: "mb-2", address: "noreply@xueia.com", forwardTo: null, forwardVerified: false, messageCount: 1, createdAt: "2026-10-05T12:30:00Z" },
 ]
 
 export const mockMessages: MailMessage[] = [
@@ -130,10 +131,57 @@ export const mockMessages: MailMessage[] = [
   { id: "m-5", mailboxId: "mb-2", from: "news@example.dev", subject: "Weekly digest #42", excerpt: "本周开发者周刊……", read: false, receivedAt: new Date(Date.now() - 50 * 3600 * 1000).toISOString() },
 ]
 
+const LOCAL_RE = /^[a-z0-9._-]{1,20}$/i
+
 export const mailboxHandlers = [
   http.get(`${API}/mailbox`, () => {
     if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
-    return ok({ addresses: mockAddresses })
+    return ok({
+      addresses: mockAddresses.map((a) => ({
+        ...a,
+        messageCount: mockMessages.filter((m) => m.mailboxId === a.id).length,
+      })),
+    })
+  }),
+
+  http.post(`${API}/mailbox`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { local } = (await request.json()) as { local: string }
+    if (!LOCAL_RE.test(local ?? "")) return fail(400, "SYS_BAD_REQUEST", "地址格式不正确")
+    const address = `${local}@${brand.emailDomain}`
+    if (mockAddresses.some((a) => a.address === address)) {
+      return fail(409, "MAILBOX_ADDR_TAKEN", "该地址已存在")
+    }
+    const created: MailboxAddress = {
+      id: `mb-${Date.now()}`,
+      address,
+      forwardTo: null,
+      forwardVerified: false,
+      messageCount: 0,
+      createdAt: new Date().toISOString(),
+    }
+    mockAddresses.push(created)
+    return ok(created)
+  }),
+
+  http.post(`${API}/mailbox/:id/update`, async ({ params, request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const target = mockAddresses.find((a) => a.id === params.id)
+    if (!target) return fail(404, "SYS_NOT_FOUND", "地址不存在")
+    const patch = (await request.json()) as { forwardTo?: string | null }
+    if (patch.forwardTo !== undefined) {
+      target.forwardTo = patch.forwardTo
+      // 转发目标变更后，之前的验证作废（验证只能走 forward-verify）
+      target.forwardVerified = false
+    }
+    return ok(target)
+  }),
+
+  http.post(`${API}/mailbox/:id/delete`, ({ params }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const i = mockAddresses.findIndex((a) => a.id === params.id)
+    if (i >= 0) mockAddresses.splice(i, 1)
+    return ok(null)
   }),
 
   http.get(`${API}/mailbox/:id`, ({ params }) => {

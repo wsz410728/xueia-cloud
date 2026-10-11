@@ -54,6 +54,13 @@
 | `AUTH_PASSWORD_MISMATCH` | 400 | 两次密码不一致 |
 | `AUTH_REG_CLOSED` | 403 | 注册未开放（data 携带开放时间窗） |
 
+### 2.3 邮箱域错误码（批次②）
+
+| code | HTTP | 说明 |
+|---|---|---|
+| `MAILBOX_ADDR_TAKEN` | 409 | 该邮箱地址已存在（同一域名下不可重复） |
+| `MAILBOX_CODE_INVALID` | 400 | 转发验证码错误或已过期 |
+
 ## 3. 接口登记表
 
 > 登记模板（复制使用）：
@@ -156,10 +163,21 @@
 - 请求：`{ "token": string, "password": string, "passwordConfirm": string }`
 - 响应 data：`null`；错误码：`SYS_BAD_REQUEST`（token 无效/过期）
 
-### 3.2 邮箱域 mailbox（批次 2；列表/已读已 mock 演示，完整功能待做）
+### 3.2 邮箱域 mailbox（批次②）
 
-已实现 mock（🟡）：`/mailbox`（地址列表）、`/mailbox/{id}`（消息列表）、`/mailbox/{id}/messages/{mid}/read`、`/mailbox/read-all`。
-待登记：`/mailbox/{id}/messages/{mid}`(`/reply`)、`/mailbox/messages/batch-delete`、`/mailbox/forward-verify` —— 参考原站语义（见 `doulor-analysis/zh.txt` 的 `em.*` 命名空间），进入批次 2 完整版时按模板补齐参数。
+已实现 mock（🟡）：
+
+| 接口 | 说明 | 参数 |
+|---|---|---|
+| `GET /mailbox` | 地址列表（含每地址 `messageCount`） | — |
+| `POST /mailbox` | 新增地址（落库拼 `brand.emailDomain` 后缀） | `local: string`（1-20 位字母/数字/._-），错误 `MAILBOX_ADDR_TAKEN` / `SYS_BAD_REQUEST` |
+| `POST /mailbox/{id}/update` | 修改转发目标 | `forwardTo: string \| null`；**变更后服务端重置 `forwardVerified=false`**（验证只能走 forward-verify） |
+| `POST /mailbox/{id}/delete` | 删除地址 | — |
+| `GET /mailbox/{id}` | 消息列表 | — |
+| `POST /mailbox/{id}/messages/{mid}/read` | 单封已读 | — |
+| `POST /mailbox/read-all` | 全部已读 | `mailboxId: string` |
+
+待实现（批次②后续任务登记）：`/mailbox/{id}/messages/{mid}`(`/reply`)、`/mailbox/messages/batch-delete`、`/mailbox/forward-verify`、`/mailbox/temp`(+`/{id}/refresh`)。
 
 ### 3.3 账户与安全域 settings（批次 2，占位待登记）
 

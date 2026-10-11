@@ -1,36 +1,187 @@
-import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { MailPlus, PenLine, RefreshCw, Settings2 } from "lucide-react"
+import { MailPlus, PenLine, RefreshCw, Settings2, Trash2 } from "lucide-react"
 import { useT } from "@/i18n"
+import { brand } from "@/config/brand"
 import { mailboxApi } from "@/api/mailbox"
 import type { MailboxAddress } from "@/api/mailbox"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
 import { cn, timeAgo } from "@/lib/utils"
+
+const LOCAL_RE = /^[a-z0-9._-]{1,20}$/i
 
 /**
  * 邮箱页 —— 对齐参考站结构：
  * 页头（写邮件/添加邮箱 + 「N / M 个地址」配额）→ 地址卡（地址 + N 封邮件 + 已转发 → 目标 + 设置）
  * → 临时邮箱区（0/1 配额 + 生成/换一个/编辑/刷新 + 说明）→ 收件箱（列表 + 空态）。
- * 临时邮箱与配额为占位 mock（批次②接 /mailbox/temp 等接口，契约见 docs/api.md）。
+ * 临时邮箱与配额上限为占位 mock（批次② Task 3 接 /mailbox/temp，契约见 docs/api.md）。
  */
 
-/** 临时邮箱占位状态 */
+/** 添加地址对话框（local part 实时预览 + 提交） */
+function AddAddressDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { t } = useT()
+  const qc = useQueryClient()
+  const [local, setLocal] = useState("")
+  const valid = LOCAL_RE.test(local)
+
+  const add = useMutation({
+    mutationFn: () => mailboxApi.addAddress(local),
+    onSuccess: () => {
+      toast.success(t("mb.addr.added"))
+      setLocal("")
+      void qc.invalidateQueries({ queryKey: ["mailbox", "addresses"] })
+      onOpenChange(false)
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("mb.addr.add")}</DialogTitle>
+          <DialogDescription>{t("mb.addr.addDesc")}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="mb-local">{t("mb.addr.local")}</Label>
+          <Input
+            id="mb-local"
+            value={local}
+            onChange={(e) => setLocal(e.target.value.trim())}
+            placeholder={t("mb.addr.localPh")}
+          />
+          {local && (
+            <p className={cn("text-xs", valid ? "text-success" : "text-destructive")}>
+              {valid ? `${local}@${brand.emailDomain}` : t("mb.addr.localInvalid")}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button disabled={!valid || add.isPending} onClick={() => add.mutate()}>
+            {add.isPending ? t("common.loading") : t("common.save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** 地址设置对话框（转发目标编辑/解绑、删除地址带二次确认） */
+function AddressSettingsDialog({
+  address,
+  onOpenChange,
+}: {
+  address: MailboxAddress | null
+  onOpenChange: (v: boolean) => void
+}) {
+  const { t } = useT()
+  const qc = useQueryClient()
+  const [forward, setForward] = useState("")
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  useEffect(() => {
+    if (address) {
+      setForward(address.forwardTo ?? "")
+      setConfirmDelete(false)
+    }
+  }, [address])
+
+  const saveForward = useMutation({
+    mutationFn: (to: string | null) => mailboxApi.updateAddress(address!.id, { forwardTo: to }),
+    onSuccess: () => {
+      toast.success(t("mb.addr.forwardSaved"))
+      void qc.invalidateQueries({ queryKey: ["mailbox", "addresses"] })
+      onOpenChange(false)
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  const remove = useMutation({
+    mutationFn: () => mailboxApi.deleteAddress(address!.id),
+    onSuccess: () => {
+      toast.success(t("mb.addr.deleted"))
+      void qc.invalidateQueries({ queryKey: ["mailbox", "addresses"] })
+      onOpenChange(false)
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  return (
+    <Dialog open={!!address} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("mb.addr.settings", { addr: address?.address ?? "" })}</DialogTitle>
+          <DialogDescription>
+            {t("mb.addr.createdAt")}：{address ? new Date(address.createdAt).toLocaleString() : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <Label htmlFor="mb-forward">{t("mb.addr.forwardLabel")}</Label>
+          <div className="flex gap-2">
+            <Input
+              id="mb-forward"
+              type="email"
+              value={forward}
+              onChange={(e) => setForward(e.target.value)}
+              placeholder={t("mb.addr.forwardPh")}
+            />
+            <Button
+              size="sm"
+              disabled={saveForward.isPending}
+              onClick={() => saveForward.mutate(forward.trim() || null)}
+            >
+              {t("common.save")}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("mb.addr.forwardNote")}</p>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t pt-3">
+          {!confirmDelete ? (
+            <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="size-4" />
+              {t("mb.addr.delete")}
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-destructive">{t("mb.addr.deleteConfirm")}</span>
+              <Button variant="destructive" size="sm" disabled={remove.isPending} onClick={() => remove.mutate()}>
+                {t("common.confirm")}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+                {t("common.cancel")}
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** 临时邮箱占位（Task 3 接 /mailbox/temp） */
 function TempMailbox() {
   const { t } = useT()
   const [temp, setTemp] = useState<string | null>(null)
 
   function onGenerate() {
-    // 占位：批次②接 POST /mailbox/temp
-    setTemp(`temp-${Math.random().toString(36).slice(2, 8)}@temp.xueia.com`)
+    setTemp(`temp-${Math.random().toString(36).slice(2, 8)}@temp.${brand.emailDomain}`)
     toast.success(t("mb.temp.generated"))
   }
   function onRefresh() {
-    setTemp(`temp-${Math.random().toString(36).slice(2, 8)}@temp.xueia.com`)
+    setTemp(`temp-${Math.random().toString(36).slice(2, 8)}@temp.${brand.emailDomain}`)
     toast.success(t("mb.temp.refreshed"))
   }
 
@@ -50,10 +201,6 @@ function TempMailbox() {
               <RefreshCw className="size-4" />
               {t("mb.temp.refresh")}
             </Button>
-            <Button variant="ghost" size="sm">
-              <PenLine className="size-4" />
-              {t("common.edit")}
-            </Button>
           </div>
         )}
         <p className="text-xs text-muted-foreground">{t("mb.temp.desc")}</p>
@@ -64,7 +211,10 @@ function TempMailbox() {
 
 export function MailboxPage() {
   const { t } = useT()
+  const qc = useQueryClient()
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [settingsFor, setSettingsFor] = useState<MailboxAddress | null>(null)
 
   const addresses = useQuery({
     queryKey: ["mailbox", "addresses"],
@@ -81,13 +231,13 @@ export function MailboxPage() {
     enabled: !!mailboxId,
   })
 
-  /** 占位：每地址邮件数（真实接口批次②在地址列表里返回 counts） */
-  const counts = useMemo(() => {
-    const data = messages.data?.messages ?? []
-    const map = new Map<string, number>()
-    if (active) map.set(active.id, data.length)
-    return map
-  }, [messages.data, active])
+  const markAllRead = useMutation({
+    mutationFn: () => mailboxApi.readAll(mailboxId as string),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["mailbox"] })
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -100,7 +250,7 @@ export function MailboxPage() {
               <PenLine className="size-4" />
               {t("mb.compose")}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
               <MailPlus className="size-4" />
               {t("mb.addr.add")}
             </Button>
@@ -124,16 +274,23 @@ export function MailboxPage() {
               <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setActiveId(a.id)}>
                 <p className="truncate text-sm font-medium">{a.address}</p>
                 <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>{t("mb.addr.count", { n: counts.get(a.id) ?? 0 })}</span>
+                  <span>{t("mb.addr.count", { n: a.messageCount })}</span>
                   {a.forwardTo && (
                     <span className="flex items-center gap-1">
-                      <Badge variant="success">{t("mb.addr.forwarded")}</Badge>
+                      <Badge variant={a.forwardVerified ? "success" : "secondary"}>
+                        {a.forwardVerified ? t("mb.addr.forwarded") : t("mb.addr.forwardUnverified")}
+                      </Badge>
                       → {a.forwardTo}
                     </span>
                   )}
                 </p>
               </button>
-              <Button variant="ghost" size="icon" aria-label={t("mb.addr.settings", { addr: a.address })}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("mb.addr.settings", { addr: a.address })}
+                onClick={() => setSettingsFor(a)}
+              >
                 <Settings2 className="size-4" />
               </Button>
             </div>
@@ -149,7 +306,14 @@ export function MailboxPage() {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold">{t("mb.inbox")}</p>
-            {active && <p className="text-xs text-muted-foreground">{active.address}</p>}
+            <div className="flex items-center gap-2">
+              {active && <p className="text-xs text-muted-foreground">{active.address}</p>}
+              {(messages.data?.messages.some((m) => !m.read)) && (
+                <Button variant="outline" size="sm" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}>
+                  {t("mb.markAllRead")}
+                </Button>
+              )}
+            </div>
           </div>
           {messages.isLoading ? (
             <div className="space-y-2">
@@ -177,6 +341,9 @@ export function MailboxPage() {
           )}
         </CardContent>
       </Card>
+
+      <AddAddressDialog open={addOpen} onOpenChange={setAddOpen} />
+      <AddressSettingsDialog address={settingsFor} onOpenChange={() => setSettingsFor(null)} />
     </div>
   )
 }
