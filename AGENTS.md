@@ -33,6 +33,7 @@
 - **目标**：从零复刻 cloud.doulor.cn（Doulor Cloud，共建式私域云平台）的**前端**，品牌替换为用户自己的 **Xueia（域名 xueia.com）**，最终目标是**真实运营**（API 层按真实端点定型，后端可后补）。
 - **状态**：设计已定稿并经用户确认，**尚未脚手架化**（无 package.json）。
 - **进度日志**（每完成一项追加一行，倒序）：
+  - 2026-10-11 对比验收轮：登录参考站实测（账号 jooyang），同口径提取结构+计算样式。**发现并修复重大 bug：main.tsx 漏 import index.css，全站此前为无样式渲染**。深色令牌对齐参考站（底 #1a1a1a、卡片同底色+白 15% 边框、圆角 6px）、概览标题逐字动画。另发现参考站新增模块「AI实验室(/dashboard/lab)」「创想造物(/dashboard/gallery)」未入范围，待用户决策。
   - 2026-10-11 **批次①完成并推送**：脚手架（Vite7+React19+TS strict+Tailwind v4+RR v7+Query v5+RHF/zod+MSW+Vitest）、设计系统（15 组件+令牌+云朵背景+玻璃拟态+角色环）、品牌配置（emailDomain 可配）、i18n zh/en、落地页九卡、认证三页（登录含 2FA 三方式+环境自检）、控制台外壳（守卫+玻璃侧栏+双铃铛）、概览页、邮箱收件箱 mock 页（加料演示）、全量占位路由、PWA（manifest+SW+favicon）、chunk 自愈。构建通过（首屏 gzip≈190KB）；WSL vitest 10/10 通过；浏览器实测登录→2FA→概览→邮箱全链路。修复两处契约 bug：/me 401 误触发登录跳转；AUTH_2FA_REQUIRED 被改写为 AUTH_REQUIRED 导致票据丢失（ApiError 现携带 data，契约见 docs/api.md）。
   - 2026-10-07 环境就绪：Windows 装 Node v24 + git 2.55 + gh 2.102（已登录 wsz410728）；WSL Ubuntu 26.04 装 Node v22。工作流定版：开发在本机、测试在 WSL、每次代码更新推送 GitHub（§7）。npm 定版；视觉定版黑白极简；Logo/社交占位、`emailDomain` 可配（已同步设计文档）。仓库公开：wsz410728/xueia-cloud。
   - 2026-10-07 设计文档补全为落地完整版：账户设置/申诉入批次②、公告强制确认入批次③、称号/反馈/活动入批次④；新增部署与环境变量、工程约定（性能/兼容/无障碍/版本/限流）两节；全站接口定版 `/api/v1`。三份文档互链同步更新。
