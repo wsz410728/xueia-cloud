@@ -348,7 +348,6 @@ export const zh: Record<string, string> = {
   "don.subtitle": "贡献一份资源，解锁对应模块。",
   "toolbox.subtitle": "常用小工具集合，全部在你的浏览器里运行。",
   "fb.subtitle": "遇到问题或有建议，欢迎告诉我们。",
-  "settings.subtitle": "用户名、邮箱、安全与管理你的账户。",
 
   "ph.batch": "计划批次",
   "nav.apiset": "公开 API",
@@ -431,4 +430,18 @@ export const zh: Record<string, string> = {
   "mb.verify.verified": "已验证",
   "mb.verify.desc": "该邮箱已验证，可用于邮件转发。",
   "mb.verify.note": "验证码 10 分钟内有效，请勿泄露给他人。",
+
+  "settings.title": "设置",
+  "settings.subtitle": "在这里管理你的账户信息与偏好。",
+  "settings.cat.all": "全部",
+  "settings.cat.account": "账户",
+  "settings.cat.general": "通用",
+  "settings.cat.security": "安全",
+  "settings.cat.notify": "通知",
+  "settings.cat.api": "API",
+  "settings.cat.danger": "危险区",
+  "settings.profile": "个人资料",
+  "settings.profile.desc": "头像、昵称与账户基本信息",
+  "settings.danger": "注销账号",
+  "settings.danger.desc": "注销后账号与全部数据将被删除，且无法恢复。",
 }

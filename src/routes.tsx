@@ -10,6 +10,7 @@ import { GalleryPage } from "@/features/gallery/GalleryPage"
 import { LeaderboardPage, AchievementsPage } from "@/features/leaderboard/LeaderboardPage"
 import { PointsPage } from "@/features/points/PointsPage"
 import { SectionPlaceholder } from "@/features/placeholder/SectionPlaceholder"
+import { SettingsPage } from "@/features/settings/SettingsPage"
 import { PlaceholderPage } from "@/features/placeholder/PlaceholderPage"
 import { NotFoundPage } from "@/features/placeholder/NotFoundPage"
 
@@ -43,7 +44,7 @@ export function AppRoutes() {
             <Route path="points" element={<PointsPage />} />
             {/* 已建骨架，待批次实现 */}
             <Route path="tempbox" element={<SectionPlaceholder titleKey="nav.tempbox" subtitleKey="tb.subtitle" batch="②" />} />
-            <Route path="settings" element={<SectionPlaceholder titleKey="nav.settings" subtitleKey="settings.subtitle" batch="②" />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="ai" element={<SectionPlaceholder titleKey="nav.ai" subtitleKey="ai.subtitle" batch="③" />} />
             <Route path="donations" element={<SectionPlaceholder titleKey="nav.donations" subtitleKey="don.subtitle" batch="③" />} />
             <Route path="community" element={<SectionPlaceholder titleKey="nav.community" subtitleKey="cm.subtitle" batch="④" />} />

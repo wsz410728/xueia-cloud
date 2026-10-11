@@ -328,7 +328,6 @@ export const en: Record<string, string> = {
   "don.subtitle": "Contribute a resource to unlock a module.",
   "toolbox.subtitle": "Handy tools that run entirely in your browser.",
   "fb.subtitle": "Found a problem or have an idea? Tell us.",
-  "settings.subtitle": "Username, email, security and account.",
 
   "ph.batch": "Planned batch",
   "nav.apiset": "Public API",
@@ -411,4 +410,18 @@ export const en: Record<string, string> = {
   "mb.verify.verified": "Verified",
   "mb.verify.desc": "This email is verified and can receive forwarded mail.",
   "mb.verify.note": "The code is valid for 10 minutes. Never share it.",
+
+  "settings.title": "Settings",
+  "settings.subtitle": "Manage your account information and preferences here.",
+  "settings.cat.all": "All",
+  "settings.cat.account": "Account",
+  "settings.cat.general": "General",
+  "settings.cat.security": "Security",
+  "settings.cat.notify": "Notifications",
+  "settings.cat.api": "API",
+  "settings.cat.danger": "Danger zone",
+  "settings.profile": "Profile",
+  "settings.profile.desc": "Avatar, nickname and basic account info",
+  "settings.danger": "Delete account",
+  "settings.danger.desc": "Deleting removes your account and all data permanently.",
 }
