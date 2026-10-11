@@ -735,6 +735,110 @@ export const voucherHandlers = [
     return fail(400, "DON_CODE_INVALID", "兑换码无效或已被使用")
   }),
 ]
+// ===== 积分 / 签到 / 商城（批次③）=====
+
+const pointsState = { balance: 128, todayCheckedIn: false, makeupCards: 0, checkinDay: "" }
+const pointsHistory: Array<{ reason: string; amount: number; at: string }> = [
+  { reason: "checkin", amount: 5, at: new Date(Date.now() - 26 * 3600 * 1000).toISOString() },
+  { reason: "shop", amount: -20, at: new Date(Date.now() - 50 * 3600 * 1000).toISOString() },
+]
+function pointsDay() { return new Date().toISOString().slice(0, 10) }
+function addHistory(reason: string, amount: number) {
+  pointsHistory.unshift({ reason, amount, at: new Date().toISOString() })
+}
+
+// ===== 商城（mock 商品与订单状态）=====
+const mockProducts = [
+  { id: "p1", name: "补签卡 1 张", desc: "可以用来补签漏掉的签到日", price: 20, stock: 12, delivery: "manual" },
+  { id: "p2", name: "中转站余额 ¥10", desc: "直接充进 AI 中转站余额", price: 10, stock: 99, delivery: "quota" },
+  { id: "p3", name: "邀请码额度 +1", desc: "增加一枚可创建的邀请码", price: 50, stock: 3, delivery: "inviteQuota" },
+  { id: "p4", name: "代理订阅 30 天", desc: "开通 30 天代理节点使用权限", price: 200, stock: 0, delivery: "feature" },
+]
+const mockOrders: Array<{ id: string; productId: string; product: string; status: "done"; deliveryContent?: string; createdAt: string }> = []
+
+export const pointsHandlers = [
+  http.get(`${API}/points`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    if (pointsState.checkinDay !== pointsDay()) pointsState.todayCheckedIn = false
+    return ok({ balance: pointsState.balance, todayCheckedIn: pointsState.todayCheckedIn, makeupCards: pointsState.makeupCards })
+  }),
+
+  http.post(`${API}/checkin`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    if (pointsState.checkinDay === pointsDay() && pointsState.todayCheckedIn) {
+      return fail(400, "POINTS_ALREADY_CHECKED_IN", "今天已经签到过了")
+    }
+    pointsState.todayCheckedIn = true
+    pointsState.checkinDay = pointsDay()
+    pointsState.balance += 5
+    addHistory("checkin", 5)
+    return ok({ reward: 5, streak: 3 })
+  }),
+
+  http.post(`${API}/checkin/makeup`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    if (pointsState.makeupCards <= 0) {
+      return fail(400, "POINTS_NO_MAKEUP_CARD", "没有可用的补签卡")
+    }
+    pointsState.makeupCards -= 1
+    pointsState.balance += 5
+    addHistory("makeup", 5)
+    return ok({ reward: 5, streak: 2 })
+  }),
+
+  http.post(`${API}/points/redeem`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { amount } = (await request.json()) as { amount: number }
+    if (!Number.isInteger(amount) || amount <= 0) return fail(400, "SYS_BAD_REQUEST", "兑换金额必须是正整数")
+    if (amount > pointsState.balance) {
+      return fail(400, "POINTS_INSUFFICIENT", "积分不足")
+    }
+    pointsState.balance -= amount
+    addHistory("redeem", -amount)
+    return ok({ balance: pointsState.balance })
+  }),
+
+  http.post(`${API}/points/transfer`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { to, amount } = (await request.json()) as { to: string; amount: number }
+    if (!to) return fail(400, "SYS_BAD_REQUEST", "请填写收款用户")
+    if (!Number.isInteger(amount) || amount <= 0) return fail(400, "SYS_BAD_REQUEST", "转账金额必须是正整数")
+    if (amount > pointsState.balance) return fail(400, "POINTS_INSUFFICIENT", "积分不足")
+    pointsState.balance -= amount
+    addHistory(`transfer:${to}`, -amount)
+    return ok({ balance: pointsState.balance })
+  }),
+
+  http.get(`${API}/points/history`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({ items: pointsHistory })
+  }),
+
+  // ===== 商城 =====
+
+  http.get(`${API}/points/products`, () => ok({ products: mockProducts })),
+
+  http.post(`${API}/points/shop/buy`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { productId } = (await request.json()) as { productId: string }
+    const p = mockProducts.find((x) => x.id === productId)
+    if (!p) return fail(404, "SYS_NOT_FOUND", "商品不存在")
+    if (p.stock <= 0) return fail(400, "SYS_BAD_REQUEST", "已售罄")
+    if (p.price > pointsState.balance) return fail(400, "POINTS_INSUFFICIENT", "积分不足")
+    p.stock -= 1
+    pointsState.balance -= p.price
+    addHistory(`shop:${p.name}`, -p.price)
+    const orderId = `o-${Date.now()}`
+    mockOrders.unshift({
+      id: orderId, productId: p.id, product: p.name, status: "done",
+      deliveryContent: p.delivery === "inviteQuota" ? "INVITE-XXXX-0001" : undefined,
+      createdAt: new Date().toISOString(),
+    })
+    return ok({ orderId })
+  }),
+
+  http.get(`${API}/points/my-orders`, () => ok({ orders: mockOrders })),
+]
 export const handlers = [
   ...authHandlers,
   ...mailboxHandlers,
@@ -747,4 +851,5 @@ export const handlers = [
   ...donationHandlers,
   ...inviteHandlers,
   ...voucherHandlers,
+  ...pointsHandlers,
 ]

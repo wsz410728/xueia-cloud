@@ -1,34 +1,100 @@
-import { Coins, RefreshCw, Send, ShoppingBag, Ticket } from "lucide-react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
+import { Coins, History, RefreshCw, Send, ShoppingBag, Ticket } from "lucide-react"
 import { useT } from "@/i18n"
+import { pointsApi } from "@/api/points"
+import { ApiError } from "@/lib/api-client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
 
 /**
- * 积分与商城 —— 对齐参考站结构：余额区 + 兑换卡 + 商品网格（含售罄/积分不足态）。
- * 数据占位（批次④接接口）。
+ * 积分与商城 —— 对齐参考站结构：余额卡（签到/补签/转账/订单/明细）+ 兑换卡 + 商品网格。
+ * Task 7：余额/签到（幂等）/补签/兑换（不可透支）/转账/明细 全接真实接口。
+ * Task 8：商品网格与订单接真实接口（当前为占位商品）。
  */
-
-interface Product {
-  name: string
-  desc: string
-  price: number
-  stock: number
-}
-
-const PLACEHOLDER_PRODUCTS: Product[] = [
-  { name: "补签卡 1 张", desc: "可以用来补签漏掉的签到日，助力你的连续签到目标", price: 20, stock: 12 },
-  { name: "中转站余额 ￥10", desc: "直接充进 AI 中转站余额，下单即到账", price: 10, stock: 99 },
-  { name: "邀请码额度 +1", desc: "增加一枚可创建的邀请码", price: 50, stock: 3 },
-  { name: "代理订阅 30 天", desc: "开通 30 天代理节点使用权限", price: 200, stock: 0 },
-  { name: "FRP 端口使用权", desc: "申请一个内网穿透端口额度", price: 80, stock: 5 },
-  { name: "自选权限兑换券", desc: "可解锁任意一个未开通的模块", price: 500, stock: 1 },
-]
-
 export function PointsPage() {
   const { t } = useT()
-  const balance = 128
+  const qc = useQueryClient()
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [redeemAmount, setRedeemAmount] = useState("")
+  const [to, setTo] = useState("")
+  const [amount, setAmount] = useState("")
+
+  const status = useQuery({ queryKey: ["points", "status"], queryFn: pointsApi.status })
+  const balance = status.data?.balance ?? 0
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["points"] })
+  }
+
+  const checkin = useMutation({
+    mutationFn: pointsApi.checkin,
+    onSuccess: (r) => {
+      toast.success(t("pt.checkin.ok", { n: r.reward }))
+      invalidate()
+    },
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "POINTS_ALREADY_CHECKED_IN") {
+        toast.error(t("pt.checkin.already"))
+        return
+      }
+      toast.error(e instanceof Error ? e.message : String(e))
+    },
+  })
+
+  const makeup = useMutation({
+    mutationFn: pointsApi.makeup,
+    onSuccess: (r) => {
+      toast.success(t("pt.makeup.ok", { n: r.reward }))
+      invalidate()
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  })
+
+  const redeem = useMutation({
+    mutationFn: () => pointsApi.redeem(Number(redeemAmount)),
+    onSuccess: (r) => {
+      toast.success(t("pt.redeemOk", { balance: r.balance }))
+      setRedeemAmount("")
+      invalidate()
+    },
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "POINTS_INSUFFICIENT") {
+        toast.error(t("pt.notEnough"))
+        return
+      }
+      toast.error(e instanceof Error ? e.message : String(e))
+    },
+  })
+
+  const transfer = useMutation({
+    mutationFn: () => pointsApi.transfer(to, Number(amount)),
+    onSuccess: (r) => {
+      toast.success(t("pt.transferOk", { balance: r.balance }))
+      setTransferOpen(false)
+      setTo("")
+      setAmount("")
+      invalidate()
+    },
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "POINTS_INSUFFICIENT") {
+        toast.error(t("pt.notEnough"))
+        return
+      }
+      toast.error(e instanceof Error ? e.message : String(e))
+    },
+  })
+
+  const redeemNum = Number(redeemAmount)
+  const redeemInvalid = !Number.isInteger(redeemNum) || redeemNum <= 0 || redeemNum > balance
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -37,11 +103,24 @@ export function PointsPage() {
         subtitle={t("pt.subtitle")}
         toolbar={
           <>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={invalidate} disabled={status.isFetching}>
               <RefreshCw className="size-4" />
               {t("common.refresh")}
             </Button>
-            <Button size="sm">{t("pt.checkin")}</Button>
+            {status.data?.todayCheckedIn ? (
+              <Button size="sm" variant="secondary" disabled>
+                {t("pt.checkin.done")}
+              </Button>
+            ) : (
+              <Button size="sm" disabled={checkin.isPending} onClick={() => checkin.mutate()}>
+                {checkin.isPending ? t("common.loading") : t("pt.checkin")}
+              </Button>
+            )}
+            {(status.data?.makeupCards ?? 0) > 0 && (
+              <Button variant="outline" size="sm" disabled={makeup.isPending} onClick={() => makeup.mutate()}>
+                {t("pt.makeup")}
+              </Button>
+            )}
           </>
         }
       />
@@ -50,62 +129,140 @@ export function PointsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("pt.mine")}</CardTitle>
-          <CardDescription>{t("pt.rate")}</CardDescription>
+          <CardDescription>
+            {t("pt.rate")}
+            {status.data?.todayCheckedIn ? ` · ${t("pt.checkin.doneHint")}` : ""}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <p className="flex items-center gap-2 text-2xl font-bold tabular-nums">
-            <Coins className="size-6 text-success" />
-            {balance}
-            <span className="text-sm font-normal text-muted-foreground">{t("pt.unit")}</span>
-          </p>
+          {status.isLoading ? (
+            <Skeleton className="h-8 w-32" />
+          ) : (
+            <p className="flex items-center gap-2 text-2xl font-bold tabular-nums">
+              <Coins className="size-6 text-success" />
+              {balance}
+              <span className="text-sm font-normal text-muted-foreground">{t("pt.unit")}</span>
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm"><Send className="size-4" />{t("pt.transfer")}</Button>
-            <Button variant="outline" size="sm"><ShoppingBag className="size-4" />{t("pt.orders")}</Button>
-            <Button variant="outline" size="sm"><Ticket className="size-4" />{t("pt.detail")}</Button>
+            <Button variant="outline" size="sm" onClick={() => setTransferOpen(true)}>
+              <Send className="size-4" />
+              {t("pt.transfer")}
+            </Button>
+            <Button variant="outline" size="sm" disabled>
+              <ShoppingBag className="size-4" />
+              {t("pt.orders")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <History className="size-4" />
+              {t("pt.detail")}
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* 商品网格 */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t("pt.shop")}</h2>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{t("pt.sortHot")}</Badge>
-            <Badge variant="secondary">{t("pt.inStockOnly")}</Badge>
-            <Badge variant="secondary">{t("ph.demo")}</Badge>
+      {/* 兑换卡（1 积分 = ¥1，金额自填，不可透支） */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Ticket className="size-4" />
+            {t("pt.redeemBalance")}
+          </CardTitle>
+          <CardDescription>{t("pt.redeemCardDesc", { v: "1" })}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              inputMode="numeric"
+              value={redeemAmount}
+              onChange={(e) => setRedeemAmount(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder={t("pt.redeemAmountPh")}
+              aria-label={t("pt.redeemBalance")}
+              className="max-w-40"
+            />
+            <Button size="sm" disabled={redeemInvalid || redeem.isPending} onClick={() => redeem.mutate()}>
+              {redeem.isPending ? t("common.loading") : t("pt.redeemNow")}
+            </Button>
+            {redeemNum > balance && <span className="text-xs text-destructive">{t("pt.notEnough")}</span>}
           </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PLACEHOLDER_PRODUCTS.map((p) => {
-            const soldOut = p.stock === 0
-            const notEnough = !soldOut && p.price > balance
-            return (
-              <Card key={p.name} className="data-fade flex flex-col">
-                <CardHeader className="flex-1">
-                  <CardTitle className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">{p.name}</span>
-                    {soldOut ? (
-                      <Badge variant="secondary">{t("pt.soldOut")}</Badge>
-                    ) : (
-                      <Badge variant="outline">{t("pt.stock", { n: p.stock })}</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="line-clamp-2">{p.desc}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between">
-                  <span className="text-base font-bold tabular-nums">
-                    {p.price} <span className="text-xs font-normal text-muted-foreground">{t("pt.unit")}</span>
-                  </span>
-                  <Button size="sm" disabled={soldOut || notEnough} variant={soldOut ? "secondary" : "default"}>
-                    {soldOut ? t("pt.soldOut") : notEnough ? t("pt.notEnough") : t("pt.buy")}
-                  </Button>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* 商品网格（Task 8 接真实接口） */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("pt.shop")}</CardTitle>
+          <CardDescription>
+            <Badge variant="secondary">{t("ph.demo")}</Badge> {t("pt.shopPending")}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      {/* 转账对话框 */}
+      <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("pt.transfer")}</DialogTitle>
+            <DialogDescription>{t("pt.transferDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="pt-to">{t("pt.transferTo")}</Label>
+            <Input id="pt-to" value={to} onChange={(e) => setTo(e.target.value)} placeholder={t("pt.transferToPh")} />
+            <Label htmlFor="pt-amount">{t("pt.transferAmount")}</Label>
+            <Input
+              id="pt-amount"
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
+            />
+            <p className="text-xs text-muted-foreground">{t("pt.transferHint", { balance })}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransferOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              disabled={!to.trim() || !amount || Number(amount) <= 0 || transfer.isPending}
+              onClick={() => transfer.mutate()}
+            >
+              {t("pt.transferSubmit")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 积分明细 */}
+      <HistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
+  )
+}
+
+function HistoryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { t } = useT()
+  const history = useQuery({ queryKey: ["points", "history"], queryFn: pointsApi.history, enabled: open })
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("pt.detail")}</DialogTitle>
+        </DialogHeader>
+        {history.isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          <ul className="max-h-80 divide-y overflow-y-auto">
+            {history.data?.items.map((h, i) => (
+              <li key={i} className="flex items-center justify-between py-2 text-sm">
+                <span className="truncate">{t(`pt.reason.${h.reason.split(":")[0]}`) || h.reason}</span>
+                <span className={h.amount >= 0 ? "tabular-nums text-success" : "tabular-nums text-destructive"}>
+                  {h.amount >= 0 ? "+" : ""}
+                  {h.amount}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }

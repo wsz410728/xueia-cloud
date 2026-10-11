@@ -81,6 +81,9 @@
 | `DON_CODE_INVALID` | 400 | 邀请/兑换码无效或格式不对 |
 | `DON_CLAIM_USED` | 400 | 已完成过补填（仅一次） |
 | `DON_PICK_MODULE` | 400 | 自选权限券未选模块 |
+| `POINTS_ALREADY_CHECKED_IN` | 400 | 今日已签到（幂等） |
+| `POINTS_NO_MAKEUP_CARD` | 400 | 没有可用的补签卡 |
+| `POINTS_INSUFFICIENT` | 400 | 积分不足（兑换/转账/购买，前后端同规则校验） |
 
 ## 3. 接口登记表
 
@@ -265,7 +268,21 @@
 | `POST /my-invites/claim` | 补填邀请码（7 天内一次） | 已用过 → `DON_CLAIM_USED`；无效 → `DON_CODE_INVALID` |
 | `POST /vouchers/redeem` | 兑换码兑换（普通补缺 / 自选券需选模块） | `{code, moduleKey?}`；自选券缺模块 → `DON_PICK_MODULE` |
 
-### 3.8 其余域（批次 4-6，占位待登记）
+### 3.8 积分与商城 points（批次③，已实现 mock 🟡）
+
+| 接口 | 说明 | 参数/备注 |
+|---|---|---|
+| `GET /points` | 余额 + 今日签到态 + 补签卡数 | 需登录 |
+| `POST /checkin` | 每日签到（幂等） | 重复 → `POINTS_ALREADY_CHECKED_IN` |
+| `POST /checkin/makeup` | 补签（消耗补签卡） | 无卡 → `POINTS_NO_MAKEUP_CARD` |
+| `POST /points/redeem` | 积分兑换中转站余额 | `amount`；不足 → `POINTS_INSUFFICIENT` |
+| `POST /points/transfer` | 转账 | `{to, amount}`；不足 → `POINTS_INSUFFICIENT` |
+| `GET /points/history` | 积分明细（最近优先） | — |
+| `GET /points/products` | 商品列表（含 stock/delivery） | — |
+| `POST /points/shop/buy` | 购买（扣积分/减库存） | `productId`；售罄/不足 → 对应错误码 |
+| `GET /points/my-orders` | 我的订单（含 deliveryContent 发货内容） | — |
+
+### 3.9 其余域（批次 4-6，占位待登记）
 
 - **tempbox**：`/tempbox/config`、`/tempbox/create`（批次 2）
 - **公告/强制确认**（批次 3）：`/announcements`、`/notice/pending`、`/notice/ack`
