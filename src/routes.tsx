@@ -6,13 +6,17 @@ import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage"
 import { DashboardLayout, RequireAuth } from "@/features/dashboard-shell/DashboardLayout"
 import { OverviewPage } from "@/features/overview/OverviewPage"
 import { MailboxPage } from "@/features/mailbox/MailboxPage"
+import { GalleryPage } from "@/features/gallery/GalleryPage"
+import { LeaderboardPage, AchievementsPage } from "@/features/leaderboard/LeaderboardPage"
+import { PointsPage } from "@/features/points/PointsPage"
+import { SectionPlaceholder } from "@/features/placeholder/SectionPlaceholder"
 import { PlaceholderPage } from "@/features/placeholder/PlaceholderPage"
 import { NotFoundPage } from "@/features/placeholder/NotFoundPage"
 
-/** 守卫白名单例外：这些 /dashboard 子路由游客可访问（原站实测设计；页面本身仍属后续批次） */
-export const DASHBOARD_GUEST_WHITELIST = ["/dashboard/tempbox", "/dashboard/community", "/dashboard/events"]
+/** 守卫白名单例外：这些 /dashboard 子路由游客可访问（页面实现后接入，见 AGENTS.md §3.4） */
+export const DASHBOARD_GUEST_WHITELIST = ["/dashboard/tempbox", "/dashboard/community", "/dashboard/events", "/dashboard/gallery"]
 
-/** 全量路由表（未实施模块 = 「建设中」占位，批次地图见设计文档 §9） */
+/** 全量路由表（批次地图见设计文档 §9；未实施模块 = 对齐参考站风格的占位骨架） */
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -28,35 +32,34 @@ export function AppRoutes() {
         <Route path="/tempbox" element={<PlaceholderPage />} />
         <Route path="/appeal" element={<PlaceholderPage />} />
 
-        {/* 控制台：requiresAuth（白名单例外暂未接入独立页面，批次②③④实现时挂白名单） */}
+        {/* 控制台：requiresAuth */}
         <Route element={<RequireAuth />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<OverviewPage />} />
-            {/* 实施中：邮箱（加料演示） */}
             <Route path="email" element={<MailboxPage />} />
-            {/* 占位：后续批次 */}
-            <Route path="tempbox" element={<PlaceholderPage moduleKey="nav.tempbox" />} />
-            <Route path="settings" element={<PlaceholderPage moduleKey="nav.settings" />} />
-            <Route path="ai" element={<PlaceholderPage moduleKey="nav.ai" />} />
-            <Route path="frp" element={<PlaceholderPage moduleKey="nav.frp" />} />
-            <Route path="proxy" element={<PlaceholderPage moduleKey="nav.proxy" />} />
-            <Route path="profile" element={<PlaceholderPage moduleKey="nav.profile" />} />
-            <Route path="space" element={<PlaceholderPage moduleKey="nav.space" />} />
-            <Route path="community" element={<PlaceholderPage moduleKey="nav.community" />} />
-            <Route path="gallery" element={<PlaceholderPage moduleKey="nav.gallery" />} />
-            <Route path="chat" element={<PlaceholderPage moduleKey="nav.chat" />} />
-            <Route path="dm" element={<PlaceholderPage moduleKey="nav.dm" />} />
-            <Route path="messages" element={<PlaceholderPage moduleKey="nav.messages" />} />
-            <Route path="points" element={<PlaceholderPage moduleKey="nav.points" />} />
-            <Route path="leaderboard" element={<PlaceholderPage moduleKey="nav.leaderboard" />} />
-            <Route path="achievements" element={<PlaceholderPage moduleKey="nav.achievements" />} />
-            <Route path="donations" element={<PlaceholderPage moduleKey="nav.donations" />} />
-            <Route path="toolbox" element={<PlaceholderPage moduleKey="nav.toolbox" />} />
-            <Route path="feedback" element={<PlaceholderPage moduleKey="nav.feedback" />} />
+            <Route path="gallery" element={<GalleryPage />} />
+            <Route path="leaderboard" element={<LeaderboardPage />} />
+            <Route path="achievements" element={<AchievementsPage />} />
+            <Route path="points" element={<PointsPage />} />
+            {/* 已建骨架，待批次实现 */}
+            <Route path="tempbox" element={<SectionPlaceholder titleKey="nav.tempbox" subtitleKey="tb.subtitle" batch="②" />} />
+            <Route path="settings" element={<SectionPlaceholder titleKey="nav.settings" subtitleKey="settings.subtitle" batch="②" />} />
+            <Route path="ai" element={<SectionPlaceholder titleKey="nav.ai" subtitleKey="ai.subtitle" batch="③" />} />
+            <Route path="donations" element={<SectionPlaceholder titleKey="nav.donations" subtitleKey="don.subtitle" batch="③" />} />
+            <Route path="community" element={<SectionPlaceholder titleKey="nav.community" subtitleKey="cm.subtitle" batch="④" />} />
+            <Route path="chat" element={<SectionPlaceholder titleKey="nav.chat" subtitleKey="chat.subtitle" batch="④" />} />
+            <Route path="dm" element={<SectionPlaceholder titleKey="nav.dm" subtitleKey="dm.subtitle" batch="④" />} />
+            <Route path="messages" element={<SectionPlaceholder titleKey="nav.messages" subtitleKey="msg.subtitle" batch="④" />} />
+            <Route path="profile" element={<SectionPlaceholder titleKey="nav.profile" subtitleKey="pf.subtitle" batch="④" />} />
+            <Route path="space" element={<SectionPlaceholder titleKey="nav.space" subtitleKey="space.subtitle" batch="④" />} />
+            <Route path="feedback" element={<SectionPlaceholder titleKey="nav.feedback" subtitleKey="fb.subtitle" batch="④" />} />
             <Route path="events/:id" element={<PlaceholderPage />} />
-            <Route path="apiset" element={<PlaceholderPage />} />
-            <Route path="oauth" element={<PlaceholderPage />} />
-            <Route path="admin" element={<PlaceholderPage moduleKey="nav.admin" />} />
+            <Route path="frp" element={<SectionPlaceholder titleKey="nav.frp" subtitleKey="frp.subtitle" batch="⑤" />} />
+            <Route path="proxy" element={<SectionPlaceholder titleKey="nav.proxy" subtitleKey="px.subtitle" batch="⑤" />} />
+            <Route path="toolbox" element={<SectionPlaceholder titleKey="nav.toolbox" subtitleKey="toolbox.subtitle" batch="⑤" />} />
+            <Route path="apiset" element={<SectionPlaceholder titleKey="nav.apiset" subtitleKey="apiset.subtitle" batch="⑥" />} />
+            <Route path="oauth" element={<SectionPlaceholder titleKey="nav.oauth" subtitleKey="oapp.subtitle" batch="⑥" />} />
+            <Route path="admin" element={<SectionPlaceholder titleKey="nav.admin" subtitleKey="admin.subtitle" batch="⑥" />} />
           </Route>
         </Route>
 
