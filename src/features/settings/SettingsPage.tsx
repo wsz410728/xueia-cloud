@@ -6,6 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader } from "@/components/ui/page-header"
 import { ProfileCard } from "./ProfileCard"
 import { TwoFactorCard } from "./TwoFactorCard"
+import { GeneralCard } from "./GeneralCard"
+import { NotifyCard, SecurityCard } from "./NotifyCard"
+import { DangerCard } from "./DangerCard"
+import { ApiAccessCard } from "./ApiAccessCard"
 
 /**
  * 账户设置页 —— 对齐参考站结构：
@@ -70,9 +74,29 @@ export function SettingsPage() {
       node: <TwoFactorCard />,
     },
     {
+      id: "motion",
+      category: "general",
+      node: <GeneralCard />,
+    },
+    {
+      id: "notify",
+      category: "notify",
+      node: <NotifyCard />,
+    },
+    {
+      id: "security",
+      category: "security",
+      node: <SecurityCard />,
+    },
+    {
+      id: "api",
+      category: "api",
+      node: <ApiAccessCard />,
+    },
+    {
       id: "danger-delete",
       category: "danger",
-      node: <SettingCard key="danger" title={t("settings.danger")} desc={t("settings.danger.desc")} />,
+      node: <DangerCard />,
     },
   ]
 

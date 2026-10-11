@@ -70,4 +70,26 @@ export const settingsApi = {
 
   /** POST /settings/2fa/recovery/regenerate —— 重新生成恢复码（旧的立即作废） */
   regenerateRecovery: () => post<{ recoveryCodes: string[] }>("/settings/2fa/recovery/regenerate"),
+
+  // ===== 通知 / 安全 / 危险区 =====
+
+  /** POST /settings/notify —— 通知偏好 */
+  updateNotify: (prefs: { announcements: boolean; personal: boolean }) =>
+    post<{ announcements: boolean; personal: boolean }>("/settings/notify", prefs),
+
+  /** POST /password —— 修改密码（其他设备会话失效由后端处理） */
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    if (!oldPassword) throw new ApiError("SYS_BAD_REQUEST", "请输入当前密码", 0)
+    if (newPassword.length < 8) throw new ApiError("SETTINGS_PASSWORD_WEAK", "新密码至少 8 位", 0)
+    return post<null>("/password", { oldPassword, newPassword })
+  },
+
+  /** POST /settings/account/delete-code —— 注销前置：向真实邮箱发确认码 */
+  requestDeleteCode: () => post<{ sentTo: string }>("/settings/account/delete-code"),
+
+  /** POST /settings/account/delete —— 凭确认码注销（不可恢复） */
+  deleteAccount: async (code: string) => {
+    if (!/^\d{6}$/.test(code)) throw new ApiError("SYS_BAD_REQUEST", "请输入 6 位确认码", 0)
+    return post<null>("/settings/account/delete", { code })
+  },
 }

@@ -32,10 +32,10 @@ describe("SettingsPage skeleton", () => {
     renderPage()
     // 默认「全部」：个人资料与注销账号同时可见
     expect(screen.getByText("个人资料")).toBeInTheDocument()
-    expect(screen.getByText("注销账号")).toBeInTheDocument()
+    expect(screen.getAllByText("注销账号").length).toBeGreaterThan(0)
 
     await userEvent.click(screen.getByRole("button", { name: "危险区" }))
-    expect(screen.getByText("注销账号")).toBeInTheDocument()
+    expect(screen.getAllByText("注销账号").length).toBeGreaterThan(0)
     expect(screen.queryByText("个人资料")).not.toBeInTheDocument()
   })
 })

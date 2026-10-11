@@ -385,4 +385,75 @@ export const twoFaHandlers = [
   }),
 ]
 
-export const handlers = [...authHandlers, ...mailboxHandlers, ...settingsHandlers, ...twoFaHandlers]
+// ===== 通知 / 安全 / 危险区 / 公开 API =====
+
+let mockHasApiKey = false
+
+export const settingsExtraHandlers = [
+  http.post(`${API}/settings/notify`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const prefs = (await request.json()) as { announcements: boolean; personal: boolean }
+    return ok(prefs)
+  }),
+
+  http.post(`${API}/password`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { oldPassword, newPassword } = (await request.json()) as { oldPassword: string; newPassword: string }
+    if (!oldPassword || (newPassword ?? "").length < 8) return fail(400, "SYS_BAD_REQUEST", "参数不合法")
+    return ok(null)
+  }),
+
+  http.post(`${API}/settings/account/delete-code`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({ sentTo: "w***@163.com" })
+  }),
+
+  http.post(`${API}/settings/account/delete`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { code } = (await request.json()) as { code: string }
+    if (code !== "123456") return fail(400, "SYS_BAD_REQUEST", "确认码错误")
+    session.user = null
+    return ok(null)
+  }),
+
+  http.get(`${API}/api-key/status`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    return ok({
+      hasKey: mockHasApiKey,
+      tier: 0,
+      achievementPoints: 6,
+      features: [
+        { name: "收件箱", open: true, limitPerDay: 10 },
+        { name: "临时邮箱", open: true, limitPerDay: 10 },
+        { name: "临时分享箱", open: true, limitPerDay: 10 },
+        { name: "AI 中转站", open: false, limitPerDay: 0 },
+      ],
+    })
+  }),
+
+  http.post(`${API}/api-key/generate`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    mockHasApiKey = true
+    return ok({ key: `sk-xueia-${Math.random().toString(36).slice(2, 18)}` })
+  }),
+
+  http.post(`${API}/api-key/reset`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    mockHasApiKey = true
+    return ok({ key: `sk-xueia-${Math.random().toString(36).slice(2, 18)}` })
+  }),
+
+  http.post(`${API}/api-key/delete`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    mockHasApiKey = false
+    return ok(null)
+  }),
+]
+
+export const handlers = [
+  ...authHandlers,
+  ...mailboxHandlers,
+  ...settingsHandlers,
+  ...twoFaHandlers,
+  ...settingsExtraHandlers,
+]
