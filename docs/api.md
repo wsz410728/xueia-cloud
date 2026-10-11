@@ -60,7 +60,7 @@
 >
 > ```markdown
 > #### METHOD /path
-> - 状态：⬜｜🟡｜✅
+> - 状态：🟡（mock 已实现）｜🟡｜✅
 > - 说明：一句话
 > - 请求：字段表（字段/类型/必填/说明）
 > - 响应：data 结构
@@ -70,8 +70,8 @@
 ### 3.1 认证域 auth（第一批范围）
 
 #### POST /login
-- 状态：⬜
-- 说明：用户名或邮箱 + 密码登录；开启 2FA 时返回票据而非会话。
+- 状态：🟡（mock 已实现）
+- 说明：用户名或邮箱 + 密码登录；开启 2FA 时抛 `AUTH_2FA_REQUIRED`，票据在 `ApiError.data.twoFactorTicket`（客户端侧）。
 - 请求：
 
 | 字段 | 类型 | 必填 | 说明 |
@@ -79,11 +79,11 @@
 | account | string | 是 | 用户名或邮箱 |
 | password | string | 是 | 登录密码 |
 
-- 响应 data：未开 2FA → `{ "user": UserSummary }`；需要 2FA → `{ "twoFactorTicket": string, "methods": ["totp", "email", "recovery"] }`（抛 `AUTH_2FA_REQUIRED`）
+- 响应 data：未开 2FA → `{ "user": UserSummary }`；需要 2FA → 401 + `{ "code": "AUTH_2FA_REQUIRED", "data": { "twoFactorTicket": string, "methods": ["totp","email","recovery"] } }`
 - 错误码：`AUTH_INVALID_CREDENTIALS`、`AUTH_BANNED`（data: `{ "reason": string, "suspendAt": string, "canAppeal": boolean }`）
 
 #### POST /login/2fa
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：凭 2FA 会话票据提交第二因子，成功后种下会话 Cookie。
 - 请求：
 
@@ -97,13 +97,13 @@
 - 错误码：`AUTH_2FA_INVALID`、`AUTH_2FA_EXPIRED`
 
 #### POST /login/2fa/send-email
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：向账号邮箱发送 2FA 验证码（限频，`SYS_RATE_LIMITED`）。
 - 请求：`{ "ticket": string }`
 - 响应 data：`{ "sentTo": "a***@example.com" }`（脱敏邮箱）
 
 #### POST /register
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：邀请码注册；成功即自动登录。
 - 请求：
 
@@ -120,19 +120,19 @@
 - 错误码：`AUTH_INVITE_INVALID`、`AUTH_USERNAME_TAKEN`、`AUTH_EMAIL_TAKEN`、`AUTH_PASSWORD_MISMATCH`、`AUTH_REG_CLOSED`
 
 #### GET /register-status
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：注册开放状态与用户名预检。
 - 请求 query：`?username=example`（可选，传了做占用预检）
 - 响应 data：`{ "open": boolean, "openUntil": string | null, "usernameAvailable": boolean | null }`
 
 #### POST /logout
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：销毁会话 Cookie。
 - 请求：无 body
 - 响应 data：`null`
 
 #### GET /me
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：当前登录用户摘要（前端 `useMe()` 唯一数据源；401 = 未登录）。
 - 响应 data：
 
@@ -146,19 +146,20 @@
 ```
 
 #### POST /password/forgot
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：发起找回密码，向真实邮箱发重置链接（始终返回成功，不泄露邮箱是否存在）。
 - 请求：`{ "email": string }`；响应 data：`null`
 
 #### POST /password/reset
-- 状态：⬜
+- 状态：🟡（mock 已实现）
 - 说明：凭邮件里的令牌重置密码。
 - 请求：`{ "token": string, "password": string, "passwordConfirm": string }`
 - 响应 data：`null`；错误码：`SYS_BAD_REQUEST`（token 无效/过期）
 
-### 3.2 邮箱域 mailbox（批次 2，占位待登记）
+### 3.2 邮箱域 mailbox（批次 2；列表/已读已 mock 演示，完整功能待做）
 
-`/mailbox`、`/mailbox/{id}`、`/mailbox/{id}/messages/{mid}`(`/read`/`/reply`)、`/mailbox/messages/batch-delete`、`/mailbox/forward-verify`、`/mailbox/read-all` —— 参考原站语义（见 `doulor-analysis/zh.txt` 的 `em.*` 命名空间），进入批次 2 时按模板登记参数。
+已实现 mock（🟡）：`/mailbox`（地址列表）、`/mailbox/{id}`（消息列表）、`/mailbox/{id}/messages/{mid}/read`、`/mailbox/read-all`。
+待登记：`/mailbox/{id}/messages/{mid}`(`/reply`)、`/mailbox/messages/batch-delete`、`/mailbox/forward-verify` —— 参考原站语义（见 `doulor-analysis/zh.txt` 的 `em.*` 命名空间），进入批次 2 完整版时按模板补齐参数。
 
 ### 3.3 账户与安全域 settings（批次 2，占位待登记）
 

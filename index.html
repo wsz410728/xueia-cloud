@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Xueia Cloud — 一站式云端平台，域名邮箱、分享箱、AI 中转站，开箱即用。" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <title>Xueia Cloud</title>
+
+    <!-- 主题防闪：首帧前读 localStorage，无记录跟随系统（与 src/lib/theme.ts 规则一致） -->
+    <script>
+      ;(function () {
+        try {
+          var saved = localStorage.getItem("xueia-theme")
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+          var dark = saved === "dark" || ((!saved || saved === "system") && prefersDark)
+          document.documentElement.classList.toggle("dark", dark)
+        } catch (e) {
+          /* 隐私模式下拿不到 localStorage，按浅色走，不阻塞渲染 */
+        }
+      })()
+    </script>
+
+    <!-- 分享到 QQ / 微信 / Telegram 时的链接卡片 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Xueia Cloud" />
+    <meta property="og:title" content="Xueia Cloud — 一站式云端平台" />
+    <meta property="og:description" content="邮箱、分享箱、AI 中转站、社区，一个账号开箱即用。" />
+    <meta property="og:image" content="https://xueia.com/favicon.svg" />
+    <meta property="og:url" content="https://xueia.com" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Xueia Cloud — 一站式云端平台" />
+    <meta name="twitter:description" content="邮箱、分享箱、AI 中转站、社区，一个账号开箱即用。" />
+
+    <!-- 开屏动画：内联渲染不等 JS；云朵为 Xueia 自绘图形 -->
+    <style>
+      @keyframes boot-splash-draw { to { stroke-dashoffset: 0 } }
+      @keyframes boot-splash-name { 0% { opacity: 0 } 11% { opacity: 1 } 64% { opacity: 1 } to { opacity: 0 } }
+      @keyframes boot-splash-out { 0% { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(1.5) } }
+      @keyframes boot-splash-bg-out { to { opacity: 0 } }
+      .splash { z-index: 100; justify-content: center; align-items: center; display: flex; position: fixed; inset: 0 }
+      .splash-bg { background: #fff; animation: .3s .94s both boot-splash-bg-out; position: absolute; inset: 0 }
+      html.dark .splash-bg { background: #0a0a0a }
+      .splash-wrap { z-index: 1; flex-direction: column; align-items: center; gap: 22px; display: flex; position: relative }
+      .splash-cloud { color: #0a0a0a; animation: .45s cubic-bezier(.4,0,.2,1) .87s both boot-splash-out }
+      html.dark .splash-cloud { color: #fafafa }
+      .splash-cloud svg { width: 160px; height: 160px; overflow: visible }
+      .splash-cloud path { stroke-dasharray: 82; stroke-dashoffset: 82px; animation: .72s cubic-bezier(.3,.4,.6,.8) both boot-splash-draw }
+      .splash-name { letter-spacing: -.02em; color: #0a0a0a; font-size: 30px; font-weight: 500; animation: 1.36s both boot-splash-name }
+      html.dark .splash-name { color: #fafafa }
+      @media (width<=480px) { .splash-cloud svg { width: 112px; height: 112px } .splash-name { font-size: 24px } }
+      @media (prefers-reduced-motion: reduce) { .splash { display: none } }
+    </style>
+    <script type="module" crossorigin src="/src/main.tsx"></script>
+  </head>
+  <body>
+    <div class="splash" id="boot-splash" aria-hidden="true">
+      <div class="splash-bg"></div>
+      <div class="splash-wrap">
+        <div class="splash-cloud">
+          <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 19h20a4.5 4.5 0 0 0 .8-8.93A7.5 7.5 0 0 0 12.4 7.6 5.5 5.5 0 0 0 6 19Z" />
+          </svg>
+        </div>
+        <div class="splash-name">Xueia Cloud</div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/sw.js").catch(function () {})
+        })
+      }
+    </script>
+    <script>
+      setTimeout(function () {
+        var el = document.getElementById("boot-splash")
+        if (el) el.remove()
+      }, 1500)
+    </script>
+    <script>
+      // chunk 自愈：部署后旧 HTML 引用旧哈希入口 → 404 → 自动刷新。
+      // 防循环：每会话最多 2 次、间隔 ≥15s；12s 未挂载也刷一次（运维保命符，勿动参数）。
+      ;(function () {
+        var COUNT_KEY = "boot-reload-count"
+        var TIME_KEY = "boot-reload-at"
+        function reloadOnce() {
+          try {
+            var count = Number(sessionStorage.getItem(COUNT_KEY) || 0)
+            if (count >= 2) return
+            if (Date.now() - Number(sessionStorage.getItem(TIME_KEY) || 0) < 15000) return
+            sessionStorage.setItem(COUNT_KEY, String(count + 1))
+            sessionStorage.setItem(TIME_KEY, String(Date.now()))
+          } catch (e) {}
+          location.reload()
+        }
+        window.addEventListener(
+          "error",
+          function (e) {
+            var t = e.target
+            if (t && t.tagName === "SCRIPT") reloadOnce()
+          },
+          true
+        )
+        setTimeout(function () {
+          var root = document.getElementById("root")
+          if (root && root.childElementCount === 0) reloadOnce()
+        }, 12000)
+      })()
+    </script>
+  </body>
+</html>

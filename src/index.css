@@ -1,0 +1,189 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* 设计令牌：黑白极简（主色=前景色），数值参考原站方案、可微调 */
+:root {
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #0a0a0a;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
+  --success: #059669; /* emerald-600：注册即用/已解锁/在线徽章 */
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #111113;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #0a0a0a;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1c1f;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --success: #34d399;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #52525b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Outfit", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  /* 全站统一细滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px }
+  ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color-muted-foreground) 35%, transparent); border-radius: 8px }
+  ::-webkit-scrollbar-track { background: transparent }
+}
+
+/* ===== 特征背景：自绘云朵 SVG mask 平铺（低对比度，不复制原站图形） ===== */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.04;
+  background-color: var(--color-foreground);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M18 42h30a9 9 0 0 0 1.6-17.9A15 15 0 0 0 20.4 20 11 11 0 0 0 18 42Z'/%3E%3Cpath d='M78 30h26a7 7 0 0 0 .9-13.9A11 11 0 0 0 84.6 14 9 9 0 0 0 78 30Z'/%3E%3C/g%3E%3C/svg%3E");
+  mask-size: 220px 110px;
+  mask-repeat: repeat;
+}
+
+html.dark body::before { opacity: 0.05 }
+
+/* ===== 玻璃拟态（侧栏/顶栏） ===== */
+@utility glass-sidebar {
+  background: color-mix(in srgb, var(--color-card) 72%, transparent);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+}
+@utility glass-panel {
+  background: color-mix(in srgb, var(--color-card) 80%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ===== 动效工具类 ===== */
+@keyframes xueia-page-enter {
+  from { opacity: 0; transform: translateY(8px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+@keyframes xueia-fade-in {
+  from { opacity: 0; transform: translateY(6px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+
+@utility page-enter {
+  animation: xueia-page-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@utility data-fade {
+  animation: xueia-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 头像角色环：conic-gradient 旋转边框（amber=成员 / rose=管理 / violet=超管） */
+@keyframes xueia-ring-spin {
+  to { transform: rotate(360deg) }
+}
+.role-ring {
+  position: relative;
+  border-radius: 9999px;
+}
+.role-ring::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, #f59e0b, #fbbf24, #f59e0b);
+  animation: xueia-ring-spin 6s linear infinite;
+  z-index: -1;
+}
+.role-ring-admin::before {
+  background: conic-gradient(from 0deg, #f43f5e, #fb7185, #f43f5e);
+}
+.role-ring-super::before {
+  background: conic-gradient(from 0deg, #8b5cf6, #a78bfa, #8b5cf6);
+}
+
+/* 标题大字号（黑体冲击力） */
+@utility heading-xl {
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .page-enter, .data-fade { animation: none }
+}

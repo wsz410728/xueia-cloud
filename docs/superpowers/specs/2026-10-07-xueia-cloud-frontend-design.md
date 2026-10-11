@@ -99,6 +99,8 @@ src/
 
 ## 5. 设计系统
 
+> 2026-10-07 用户拍板：视觉照搬原站的黑白极简方向（主色=前景色、emerald 强调），不另设品牌主色。
+
 - **令牌**（CSS 变量，`@theme` 注册）：浅色底 `#fafafa`/深色底 `#0a0a0a`；主色 = 前景色（黑白反转按钮）；强调绿 emerald 仅用于「注册即用/已解锁/在线」徽章与状态点；`--radius: 0.625rem`；细边框、极淡阴影；完整令牌值参考 `doulor-analysis` 提取的 CSS，**数值可微调出自己个性**。
 - **特征背景**：全站低对比度云朵 SVG 图案（mask 平铺），云形参数自绘，不复制原站图形。
 - **字体**：Outfit（OFL 开源）+ PingFang SC / Microsoft YaHei / Noto Sans SC 回退；标题 `-0.02em` 字距。
@@ -149,7 +151,7 @@ src/
   | `VITE_API_BASE` | API 前缀，默认 `/api/v1` 同源 | 生产同源反代时留默认 |
   | `VITE_ENABLE_MSW` | 是否启用 mock 层 | 开发 `true`（默认），生产构建 `false` |
   | `VITE_SENTRY_DSN` | 错误上报（可空则不启用） | 选填 |
-- **站点级配置**（非密，构建期常量，来自 `brand.ts`）：域名邮箱后缀 `@xueia.com`、支持邮箱、社交链接。**任何密钥（CF Token、Brevo Key、NewAPI 凭据、R2）都属于后端/部署层，严禁进前端包。**
+- **站点级配置**（非密，构建期常量，来自 `brand.ts`）：**域名邮箱后缀做成可配置项 `emailDomain`（默认 `xueia.com`，用户 2026-10-07 拍板不写死）**、支持邮箱、社交链接（QQ 群/TG 暂用占位符）。**Logo 方案**：文字 Logo（Xueia）+ 自绘云朵 SVG 占位，后续可换真实素材。**任何密钥（CF Token、Brevo Key、NewAPI 凭据、R2）都属于后端/部署层，严禁进前端包。**
 
 ### 10.2 后端依赖清单（运营前置，非第一批编码，但记录以免遗漏）
 

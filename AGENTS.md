@@ -19,6 +19,7 @@
 
 | 变更类型 | 必须同步的文档 |
 |---|---|
+| **任何代码更新** | **git commit + push origin main（强制，见 §7 工作流）** |
 | 新增/修改/删除接口、错误码 | `docs/api.md`（状态标记与参数表） |
 | 新增/修改页面、组件、交互 | `AGENTS.md` §2/§3（若影响范围或架构约定） |
 | 范围/模块取舍/批次调整 | 设计文档（先经用户确认）+ `AGENTS.md` |
@@ -32,6 +33,8 @@
 - **目标**：从零复刻 cloud.doulor.cn（Doulor Cloud，共建式私域云平台）的**前端**，品牌替换为用户自己的 **Xueia（域名 xueia.com）**，最终目标是**真实运营**（API 层按真实端点定型，后端可后补）。
 - **状态**：设计已定稿并经用户确认，**尚未脚手架化**（无 package.json）。
 - **进度日志**（每完成一项追加一行，倒序）：
+  - 2026-10-11 **批次①完成并推送**：脚手架（Vite7+React19+TS strict+Tailwind v4+RR v7+Query v5+RHF/zod+MSW+Vitest）、设计系统（15 组件+令牌+云朵背景+玻璃拟态+角色环）、品牌配置（emailDomain 可配）、i18n zh/en、落地页九卡、认证三页（登录含 2FA 三方式+环境自检）、控制台外壳（守卫+玻璃侧栏+双铃铛）、概览页、邮箱收件箱 mock 页（加料演示）、全量占位路由、PWA（manifest+SW+favicon）、chunk 自愈。构建通过（首屏 gzip≈190KB）；WSL vitest 10/10 通过；浏览器实测登录→2FA→概览→邮箱全链路。修复两处契约 bug：/me 401 误触发登录跳转；AUTH_2FA_REQUIRED 被改写为 AUTH_REQUIRED 导致票据丢失（ApiError 现携带 data，契约见 docs/api.md）。
+  - 2026-10-07 环境就绪：Windows 装 Node v24 + git 2.55 + gh 2.102（已登录 wsz410728）；WSL Ubuntu 26.04 装 Node v22。工作流定版：开发在本机、测试在 WSL、每次代码更新推送 GitHub（§7）。npm 定版；视觉定版黑白极简；Logo/社交占位、`emailDomain` 可配（已同步设计文档）。仓库公开：wsz410728/xueia-cloud。
   - 2026-10-07 设计文档补全为落地完整版：账户设置/申诉入批次②、公告强制确认入批次③、称号/反馈/活动入批次④；新增部署与环境变量、工程约定（性能/兼容/无障碍/版本/限流）两节；全站接口定版 `/api/v1`。三份文档互链同步更新。
   - 2026-10-07 设计文档定稿（含域名/网盘裁剪）；建立 AGENTS.md 知识库与 `docs/api.md` 接口登记册；文档互链导航与同步规则生效。
 - **流程**：走 superpowers 的 Architectural 路径 —— 设计文档已获批准 → 下一步是 writing-plans 生成第一批实施计划 → 按批次实施。每批次独立可演示。
@@ -67,7 +70,7 @@
 
 ### 3.1 技术栈（脚手架按此，之后以 package.json 为准）
 
-Vite 7 + React 19 + TypeScript strict；Tailwind CSS v4（CSS-first `@theme`）；shadcn/ui（源码入库可改）+ Radix UI + lucide-react；React Router v7 library 模式（BrowserRouter）；TanStack Query v5（服务端状态）；react-hook-form + zod（表单）；自研轻量 i18n provider；MSW v2（mock）；Vitest + Testing Library + Playwright（测试）；marked + DOMPurify（Markdown，预留）。
+Vite 7 + React 19 + TypeScript strict；Tailwind CSS v4（CSS-first `@theme`）；shadcn/ui（源码入库可改）+ Radix UI + lucide-react；React Router v7 library 模式（BrowserRouter）；TanStack Query v5（服务端状态）；react-hook-form + zod（表单）；自研轻量 i18n provider；MSW v2（mock）；Vitest + Testing Library + Playwright（测试）；marked + DOMPurify（Markdown，预留）。**包管理器定版 npm（2026-10-07 用户拍板）。**目录按 `src/features/<模块>` 组织。
 
 ### 3.2 目录结构
 
@@ -169,13 +172,24 @@ src/
 - 修复完成必须验证：构建通过 + 相关测试通过 + 受影响页面手动/Playwright 走一遍，并在回复里如实报告结果。
 - 遇到「疑似环境问题」先查本文件第 7 节（cmd 无 Unix 工具、工具链未装）再下结论。
 
-## 7. 环境警告（本机实际踩过的坑）
+## 7. 环境与工作流（本机实际状态 + 强制工作流）
 
-- **系统 shell 是 Windows cmd**：`grep`/`sed`/`head`/`wc`/`find` 等 Unix 工具**不存在**，管道 `|`、`&&` 后半段可能被静默截断。复杂文本处理用 PowerShell（`Select-String`、正则 Matches），或写成 `.ps1` 脚本文件再 `powershell -ExecutionPolicy Bypass -File` 执行。
-- **Node.js / npm / git 均未安装**（已确认标准安装路径为空）。构建、测试、git 提交前需先装工具链；在此之前不要假设 `npm run *`、`git *` 可用。
-- `doulor-analysis/` 是分析产物不是项目代码：不要在其中开发，不要打进构建。
+### 7.1 强制工作流（用户拍板，2026-10-07 生效）
+
+- **开发代码在本机（Windows）环境**：写代码、跑 `npm run dev` / `npm run build` 都在 Windows 侧。
+- **测试在 WSL 环境**：Vitest / Playwright 一律在 WSL Ubuntu 里跑（见 §8 命令），不在 Windows 侧跑测试。
+- **每次更新代码后必须同步到 GitHub**：`git commit` + `git push origin main`（仓库 `wsz410728/xueia-cloud`，gh 已设备码登录、凭据走 keyring）。不允许攒批——一个功能点一推。
+
+### 7.2 环境状态（2026-10-07 更新）
+
+- **Windows 本机**：git 2.55 + gh 2.102（已登录 wsz410728）+ Node.js LTS 22 已装（winget）。**系统 shell 是 cmd**：`grep`/`sed`/`head`/`wc`/`find` 等 Unix 工具**不存在**，管道 `|`、`&&` 后半段可能被静默截断。复杂文本处理用 PowerShell（`Select-String`、正则 Matches），或写成 `.ps1` 脚本文件再 `powershell -ExecutionPolicy Bypass -File` 执行。
+- **WSL Ubuntu 26.04**：git 已有；Node 22 经 NodeSource 安装。注意：`/mnt/d` 下的项目目录跨平台共享，`node_modules` 中的原生二进制按平台区分——依赖安装策略见 §8（双平台二进制以显式 devDeps 方式共存）。
+- `doulor-analysis/` 是分析产物不是项目代码：不要在其中开发，已被 `.gitignore` 排除出公开仓库。
 - 变更前必读：`docs/superpowers/specs/2026-10-07-xueia-cloud-frontend-design.md`（设计文档，一切实现以它为准）、`docs/api.md`（接口登记册，写接口代码前先查）。
 
-## 8. 验证命令
+## 8. 验证命令与双平台依赖策略
 
-脚手架完成后在此补充（预期 Vite 默认：`npm run dev` / `npm run build` / `npm run test` / `npx playwright test`）。
+- **Windows（开发）**：`npm run dev`（5173 端口）/ `npm run build`（tsc --noEmit + vite build）/ `npm run preview`。
+- **WSL（测试）**：注意必须用**非登录 shell**（`bash -lc` 会因 Windows PATH 污染报 export 错误）：
+  `wsl -d Ubuntu -- bash -c "cd /mnt/d/WSL/wenjian/web && npm install --no-fund --no-audit >/dev/null 2>&1; npm test"`
+- **双平台 node_modules**：esbuild/rollup/lightningcss/tailwind-oxide 的原生二进制按「当前执行 npm install 的平台」安装。WSL 跑测试前先在 WSL 里 `npm install`（增量、很快，只换平台二进制）；回到 Windows 开发前再在 Windows 侧 `npm install` 换回。**不要试图把两平台二进制写成显式依赖**（已实测：npm 对平台不匹配的直接依赖硬报 ENOTSUP）。dev server 运行中不要在另一侧换二进制（文件锁）。
