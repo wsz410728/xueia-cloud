@@ -61,6 +61,21 @@
 | `MAILBOX_ADDR_TAKEN` | 409 | 该邮箱地址已存在（同一域名下不可重复） |
 | `MAILBOX_CODE_INVALID` | 400 | 转发验证码错误或已过期 |
 
+### 2.4 设置 / 2FA / 分享箱 / 申诉错误码（批次②）
+
+| code | HTTP | 说明 |
+|---|---|---|
+| `SETTINGS_NICKNAME_INVALID` | 400 | 昵称不合规（2-16 位中文/英文/数字/下划线，前端同规则前置校验） |
+| `SETTINGS_USERNAME_INVALID` | 400 | 用户名不合规（3-24 位字母/数字/下划线） |
+| `SETTINGS_AVATAR_TYPE` | 400 | 头像类型不支持（仅 JPG/PNG/WebP/GIF，前端前置拦截） |
+| `SETTINGS_AVATAR_TOO_LARGE` | 400 | 头像超过 2 MB（前端前置拦截） |
+| `SETTINGS_PASSWORD_WEAK` | 400 | 新密码强度不足（<8 位） |
+| `S2FA_CODE_INVALID` | 400 | 动态码格式/内容错误 |
+| `TB_TEXT_EMPTY` | 400 | 分享文字为空 |
+| `TB_FILE_TOO_LARGE` | 400 | 单文件超过配置上限（前端前置拦截） |
+| `TB_TOO_MANY_FILES` | 400 | 文件数超过配置上限（前端前置拦截） |
+| `TB_CODE_EXPIRED` | 404 | 接收码不存在或已过期（取件页显示友好过期态） |
+
 ## 3. 接口登记表
 
 > 登记模板（复制使用）：
@@ -182,16 +197,43 @@
 
 待实现（批次②后续任务登记）：`/mailbox/forward-verify`、`/mailbox/temp`(+`/{id}/refresh`)。
 
-### 3.3 账户与安全域 settings（批次 2，占位待登记）
+### 3.3 账户与安全域 settings（批次②，已实现 mock 🟡）
 
-- 资料：`/settings/username`、`/settings/nickname`、`/settings/avatar`、`/settings/notify`
-- 真实邮箱绑定：`/settings/email`、`/settings/email/verify`
-- 2FA 管理：`/settings/2fa`（disable/email/recovery/regenerate）、`/settings/2fa/totp/{start,confirm,disable}`
-- 注销：`/settings/account/delete`、`/settings/account/delete-code`
-- 申诉：`/appeal`（提交）、`/appeal/pending-reply`、`/appeal/acknowledge`
-- 错误码前缀：`SETTINGS_*`、`APPEAL_*`（登记时补入第 2 节）
+| 接口 | 说明 | 参数/备注 |
+|---|---|---|
+| `POST /settings/nickname` | 修改昵称 | `nickname`（2-16） |
+| `POST /settings/username` | 修改用户名（同步邮箱前缀） | `username`（3-24） |
+| `POST /settings/avatar` | 上传头像（multipart `file`） | 类型/大小前置校验 |
+| `POST /settings/avatar/delete` | 删除头像 | — |
+| `POST /settings/2fa/totp/start` | 开始绑定动态码 | 返回 `{secret, otpauthUrl}` |
+| `POST /settings/2fa/totp/confirm` | 确认动态码 | `code`；返回 `{recoveryCodes}`（只显示一次） |
+| `POST /settings/2fa/totp/disable` | 关闭动态码 | `password` |
+| `POST /settings/2fa/email` / `/settings/2fa/email/disable` | 邮箱二次验证开关 | — |
+| `POST /settings/2fa/recovery/regenerate` | 重新生成恢复码 | 返回新 `{recoveryCodes}`，旧的作废 |
+| `POST /settings/notify` | 通知偏好 | `{announcements, personal}` |
+| `POST /password` | 修改密码 | `{oldPassword, newPassword}`（≥8 位） |
+| `POST /settings/account/delete-code` | 注销前置：发确认码 | 返回 `{sentTo}`（掩码） |
+| `POST /settings/account/delete` | 注销账号 | `code`（6 位），成功后会话失效 |
+| `GET /api-key/status` | 公开 API Key 状态与额度表 | 返回 `{hasKey, tier, achievementPoints, features[]}` |
+| `POST /api-key/generate` / `/api-key/reset` / `/api-key/delete` | Key 生成/重置/删除 | 明文 Key 仅在生成/重置响应中出现一次 |
 
-### 3.4 其余域（批次 3-6，占位待登记）
+### 3.4 临时分享箱 tempbox（批次②，已实现 mock 🟡）
+
+| 接口 | 说明 | 参数/备注 |
+|---|---|---|
+| `GET /tempbox/config` | 分享规则（**公开接口**，取件页也用） | 返回 `{retentionMinutes, maxFileSizeMB, maxFiles, maxLive}` |
+| `POST /tempbox/create` | 创建分享（文字 JSON / 文件 multipart 双形态） | 需登录；返回 6 位码 + 分享链接 + 到期时间 |
+| `POST /tempbox/{code}/append` | 追加文件到已有箱 | 需登录 |
+| `GET /tempbox/pickup?code=` | 取件（**公开接口**，游客可调） | 未知/过期 → `TB_CODE_EXPIRED`（取件页显示友好过期态） |
+
+### 3.5 申诉域 appeal（批次②，已实现 mock 🟡）
+
+| 接口 | 说明 | 参数/备注 |
+|---|---|---|
+| `POST /appeal` | 提交申诉（**公开**，无需登录） | `{account(必填), contact(选填), content(≥10 字)}`；前端同规则前置校验 |
+| `GET /appeal/pending-reply` | 管理员回复（有则需已阅确认） | 返回 `null` 或 `{reply, repliedAt, status}` |
+
+### 3.6 其余域（批次 3-6，占位待登记）
 
 - **tempbox**：`/tempbox/config`、`/tempbox/create`（批次 2）
 - **公告/强制确认**（批次 3）：`/announcements`、`/notice/pending`、`/notice/ack`

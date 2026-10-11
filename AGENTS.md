@@ -33,6 +33,7 @@
 - **目标**：从零复刻 cloud.doulor.cn（Doulor Cloud，共建式私域云平台）的**前端**，品牌替换为用户自己的 **Xueia（域名 xueia.com）**，最终目标是**真实运营**（API 层按真实端点定型，后端可后补）。
 - **状态**：设计已定稿并经用户确认，**尚未脚手架化**（无 package.json）。
 - **进度日志**（每完成一项追加一行，倒序）：
+  - 2026-10-11 **批次②完成（11 任务全部落地并推送）**：邮箱完整版（地址 CRUD/收件箱表情·详情·回复·批量删除/临时邮箱/转发验证）、临时分享箱（分享端 + **游客取件公开路由 /tempbox**）、账户设置（资料/2FA 管理含 TOTP 二维码与恢复码/动效与通知偏好/安全/危险区/公开 API 卡）、封禁申诉（公开路由 /appeal）。**测试 50/50（Vitest）+ 8/8（Playwright E2E）**，构建通过；E2E 首次真跑并修掉批次①遗留的非唯一定位器。全程 TDD（每任务 RED→GREEN），10 条 Ruling 记录在 `.superpowers/sdd/…/progress.md`（临时工作区，评审后删除）。
   - 2026-10-11 逐页对比轮（用户反馈邮箱页不一致）：**邮箱页按参考站重构**（「N/M 个地址」配额 + 写邮件/添加邮箱工具栏 + 地址卡[N 封邮件/已转发→目标/设置齿轮] + **临时邮箱区**[0/1+生成/刷新/编辑] + 收件箱列表/空态）；**概览页补齐**（编辑布局按钮 + 最近活动审计卡 + 个人名片卡 + 网站动态分类徽章/置顶 + 统计卡可点击）；排行榜补指标二级行（积分榜=余额/累计、社区榜=发帖/点赞/回复）；成就页补加入于/当前称号/升级进度行；修复一批未登记 i18n key 裸显示（dash.ai.notBound/common.goToOpen/dash.profile.* 等）。六页结构化对比全部同构（网站动态占 2 列宽、无网盘统计卡为有意差异）。
   - 2026-10-11 用户反馈「侧栏多了个收缩按钮」：确认是我加的折叠浮钮（参考站实测无此控件，非移动端 bug），**移除折叠功能**、侧栏固定 240px；用户块头像改为「查看个人空间」入口（对齐参考站）。
   - 2026-10-11 页面壳复刻（用户指示提前）：新增 `PageHeader`/`TitleChars` 脚手架（逐字标题+副标题+工具栏+子导航，对齐参考站内容页结构）；**创想造物完整实现**（子页签 all/mine/collection、搜索、最新/浏览/点赞排序、作品卡[缩略图占位/🌐标记/简介/作者/浏览/点赞]、共 N 个作品）；**排行榜**（5 榜单+4 时段+条目榜）、**成就**（三态成就卡：已解锁/进度/未解锁）、**积分与商城**（余额卡+商品网格含售罄/积分不足态）实现并含占位数据；其余 13 个模块路由升级为 SectionPlaceholder（参考站同款页头+「示例数据/计划批次N」标注）。交互实测通过（过滤/排序/搜索），构建通过。
@@ -203,4 +204,6 @@ src/
 - **Windows（开发）**：`npm run dev`（5173 端口）/ `npm run build`（tsc --noEmit + vite build）/ `npm run preview`。
 - **WSL（测试）**：注意必须用**非登录 shell**（`bash -lc` 会因 Windows PATH 污染报 export 错误）：
   `wsl -d Ubuntu -- bash -c "cd /mnt/d/WSL/wenjian/web && npm install --no-fund --no-audit >/dev/null 2>&1; npm test"`
+- **E2E（Playwright）**：目前**在 Windows 跑**（WSL 需 `playwright install --with-deps` 下载浏览器与系统依赖，待环境完善）：`npm run e2e`（会自动起 vite dev，mock 态）。注意 mock 会话仅存活于 SPA 导航，登录后的用例要用页内点击，不能 `page.goto`。
+- **收尾验证铁律**：每个任务的验证必须**同时**跑 `npm test`（WSL）与 `npm run build`（Windows）—— task 级测试命令不含 tsc，只信它会漏掉类型/i18n 重复键一类只被构建暴露的错误（已实际踩过）。
 - **双平台 node_modules**：esbuild/rollup/lightningcss/tailwind-oxide 的原生二进制按「当前执行 npm install 的平台」安装。WSL 跑测试前先在 WSL 里 `npm install`（增量、很快，只换平台二进制）；回到 Windows 开发前再在 Windows 侧 `npm install` 换回。**不要试图把两平台二进制写成显式依赖**（已实测：npm 对平台不匹配的直接依赖硬报 ENOTSUP）。dev server 运行中不要在另一侧换二进制（文件锁）。

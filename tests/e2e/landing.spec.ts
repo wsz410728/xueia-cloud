@@ -5,7 +5,7 @@ test("landing renders hero and features", async ({ page }) => {
   await page.goto("/")
   await expect(page.getByRole("heading", { level: 1 })).toContainText(/一站式云端平台|One cloud platform/)
   await expect(page.getByText(/九大能力|Nine capabilities/)).toBeVisible()
-  await expect(page.getByRole("link", { name: /立即注册|Sign up now/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /立即注册|Sign up now/ }).first()).toBeVisible()
 })
 
 test("login page renders and env diag works", async ({ page }) => {
