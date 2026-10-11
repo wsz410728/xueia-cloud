@@ -444,4 +444,16 @@ export const zh: Record<string, string> = {
   "settings.profile.desc": "头像、昵称与账户基本信息",
   "settings.danger": "注销账号",
   "settings.danger.desc": "注销后账号与全部数据将被删除，且无法恢复。",
+
+  "settings.avatar.upload": "上传头像",
+  "settings.avatar.hint": "支持 JPG/PNG/WebP/GIF，上限 2 MB",
+  "settings.nickname": "昵称",
+  "settings.nickname.ph": "2-16 位中文/英文/数字/下划线",
+  "settings.username": "用户名",
+  "settings.realEmail": "真实邮箱",
+  "settings.myEmail": "我的邮箱",
+  "settings.registeredAt": "注册时间",
+  "settings.verified": "已验证",
+  "settings.unverified": "未验证",
+  "settings.editNote": "修改后其他设备上的登录可能会失效。",
 }

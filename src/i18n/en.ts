@@ -424,4 +424,16 @@ export const en: Record<string, string> = {
   "settings.profile.desc": "Avatar, nickname and basic account info",
   "settings.danger": "Delete account",
   "settings.danger.desc": "Deleting removes your account and all data permanently.",
+
+  "settings.avatar.upload": "Upload avatar",
+  "settings.avatar.hint": "JPG/PNG/WebP/GIF, up to 2 MB",
+  "settings.nickname": "Nickname",
+  "settings.nickname.ph": "2-16 chars: CJK/letters/digits/underscore",
+  "settings.username": "Username",
+  "settings.realEmail": "Real email",
+  "settings.myEmail": "My mailbox",
+  "settings.registeredAt": "Registered",
+  "settings.verified": "Verified",
+  "settings.unverified": "Unverified",
+  "settings.editNote": "Other sessions may be signed out after saving.",
 }

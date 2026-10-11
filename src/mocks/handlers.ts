@@ -294,4 +294,42 @@ export const mailboxHandlers = [
   }),
 ]
 
-export const handlers = [...authHandlers, ...mailboxHandlers]
+// ===== 设置域 =====
+
+export const settingsHandlers = [
+  http.post(`${API}/settings/nickname`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { nickname } = (await request.json()) as { nickname: string }
+    if (!nickname) return fail(400, "SYS_BAD_REQUEST", "昵称不能为空")
+    session.user.nickname = nickname
+    return ok({ nickname })
+  }),
+
+  http.post(`${API}/settings/username`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const { username } = (await request.json()) as { username: string }
+    if (!username) return fail(400, "SYS_BAD_REQUEST", "用户名不能为空")
+    session.user.username = username
+    session.user.email = `${username}@${brand.emailDomain}`
+    return ok({ username })
+  }),
+
+  http.post(`${API}/settings/avatar`, async ({ request }) => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    const form = await request.formData()
+    const file = form.get("file")
+    if (!(file instanceof File)) return fail(400, "SYS_BAD_REQUEST", "缺少文件")
+    // mock：不落盘，返回一个占位 SVG data URL
+    const avatarUrl = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzExMSIvPjx0ZXh0IHg9IjUwIiB5PSI2MCIgZm9udC1zaXplPSI0MCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+WDwvdGV4dD48L3N2Zz4="
+    session.user.avatarUrl = avatarUrl
+    return ok({ avatarUrl })
+  }),
+
+  http.post(`${API}/settings/avatar/delete`, () => {
+    if (!session.user) return fail(401, "AUTH_REQUIRED", "未登录")
+    session.user.avatarUrl = null
+    return ok(null)
+  }),
+]
+
+export const handlers = [...authHandlers, ...mailboxHandlers, ...settingsHandlers]

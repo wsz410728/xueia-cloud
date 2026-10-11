@@ -36,13 +36,15 @@ function redirectToLogin() {
  * 各业务代码只 catch ApiError 处理自己关心的 code，无需重复处理 401/403。
  */
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // FormData 让浏览器自带 multipart boundary；JSON 请求才设置 Content-Type
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData
   let res: Response
   try {
     res = await fetch(`${API_BASE}${path}`, {
       credentials: "include",
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...init?.headers,
       },
     })

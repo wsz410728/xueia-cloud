@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/page-header"
+import { ProfileCard } from "./ProfileCard"
 
 /**
  * 账户设置页 —— 对齐参考站结构：
@@ -60,7 +61,7 @@ export function SettingsPage() {
     {
       id: "profile",
       category: "account",
-      node: <SettingCard key="profile" title={t("settings.profile")} desc={t("settings.profile.desc")} />,
+      node: <ProfileCard />,
     },
     {
       id: "danger-delete",
